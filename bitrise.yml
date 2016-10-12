@@ -1,0 +1,153 @@
+format_version: 1.1.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+app:
+  envs:
+  # define these in your .bitrise.secrets.yml
+  - BITRISE_MACOS_XCARCHIVE_PATH: $BITRISE_MACOS_XCARCHIVE_PATH
+
+  - SAMPLE_APP_URL: https://github.com/bitrise-samples/sample-apps-xamarin-cross-platform.git
+  - BITRISE_PROJECT_PATH: Multiplatform.sln
+  - BITRISE_XAMARIN_CONFIGURATION: Release
+  - BITRISE_XAMARIN_PLATFORM: iPhone
+
+workflows:
+  ci:
+    after_run: 
+    - test
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+            rm -rf ./_tmp
+    - change-workdir:
+        title: Switch working dir to test / _tmp dir
+        run_if: true
+        inputs:
+        - path: ./_tmp
+        - is_create_path: true
+    - git-clone:
+        run_if: true
+        inputs:
+        - repository_url: $SAMPLE_APP_URL
+        - clone_into_dir: ./
+        - commit: ""
+        - tag: ""
+        - branch: "master"
+        - pull_request_id: ""
+        - clone_depth: ""
+    - certificate-and-profile-installer:
+    - xamarin-user-management:
+    - nuget-restore:
+    - git::https://github.com/bitrise-steplib/steps-xamarin-archive.git@develop:
+        inputs:
+        - force_mdtool: "yes"
+        - project_type_whitelist: macos
+
+  test:
+    steps:
+    - path::./:
+        title: Step Test - Export Options
+        inputs:
+        - export_method: development
+        - team_id: 9NS44DLTN7
+    - path::./:
+        title: Step Test - Custom Export Options
+        inputs:
+        - custom_export_options_plist_content: |-
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+                <dict>
+                    <key>method</key>
+                    <string>development</string>
+                    <key>teamID</key>
+                    <string>9NS44DLTN7</string>
+                </dict>
+            </plist>
+    - path::./:
+        title: Step Test - Legacy Export
+        inputs:
+        - use_legacy_export: "yes"
+        - legacy_export_provisioning_profile_name: Mac Development Wildcard
+    - script:
+        title: Output Test
+        inputs:
+        - content: |-
+            echo "BITRISE_APP_PATH: $BITRISE_APP_PATH"
+            echo "BITRISE_PKG_PATH: $BITRISE_PKG_PATH"
+
+  # ----------------------------------------------------------------
+  # --- workflows to Share this step into a Step Library
+  audit-this-step:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+            stepman audit --step-yml ./step.yml
+
+  share-this-step:
+    envs:
+      # if you want to share this step into a StepLib
+      - MY_STEPLIB_REPO_FORK_GIT_URL:
+      - STEP_ID_IN_STEPLIB:
+      - STEP_GIT_VERION_TAG_TO_SHARE:
+      - STEP_GIT_CLONE_URL:
+    description: |-
+      If this is the first time you try to share a Step you should
+      first call: $ bitrise share
+
+      This will print you a guide, and information about how Step sharing
+      works. Please read it at least once!
+
+      As noted in the Step sharing guide you'll have to fork the
+      StepLib you want to share this step into. Once you're done with forking
+      the repository you should set your own fork's git clone URL
+      in the `.bitrise.secrets.yml` file, or here in the `envs` section,
+      as the value of the `MY_STEPLIB_REPO_FORK_GIT_URL` environment.
+
+      You're now ready to share this Step, just make sure that
+      the `STEP_ID_IN_STEPLIB` and `STEP_GIT_VERION_TAG_TO_SHARE`
+      environments are set to the desired values!
+
+      To share this Step into a StepLib you can just run: $ bitrise run share-this-step
+
+      Once it finishes the only thing left is to actually create a Pull Request,
+      the way described in the guide printed at the end of the process.
+    before_run:
+    - audit-this-step
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+            bitrise share start -c ${MY_STEPLIB_REPO_FORK_GIT_URL}
+            bitrise share create --stepid ${STEP_ID_IN_STEPLIB} --tag ${STEP_GIT_VERION_TAG_TO_SHARE} --git ${STEP_GIT_CLONE_URL}
+            bitrise share finish
+
+  # ----------------------------------------------------------------
+  # --- Utility workflows
+  godeps-update:
+    title: Godeps update
+    description: |
+      Used for updating bitrise dependencies with godep
+    steps:
+    - script:
+        title: Dependency update
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -ex
+            go get -u -v github.com/tools/godep
+
+            rm -rf ./Godeps
+            rm -rf ./vendor
+
+            go get -t -d ./...
+            godep save ./...
