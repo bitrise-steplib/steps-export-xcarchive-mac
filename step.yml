@@ -1,12 +1,12 @@
-title: "Export Xcode archive"
-summary: Export Xcode archive
+title: Export macOS Xcode archive
+summary: Export macOS Xcode archive
 description: |-
-  Export Xcode archive.
+  Export macOS Xcode archive.
 
   Exports .app or .pkg from macOS .xcarchive.
-website: https://github.com/bitrise-steplib/steps-export-archive-mac
-source_code_url: https://github.com/bitrise-steplib/steps-export-archive-mac
-support_url: https://github.com/bitrise-steplib/steps-export-archive-mac/issues
+website: https://github.com/bitrise-steplib/steps-export-xcarchive-mac
+source_code_url: https://github.com/bitrise-steplib/steps-export-xcarchive-mac
+support_url: https://github.com/bitrise-steplib/steps-export-xcarchive-mac/issues
 host_os_tags:
   - osx-10.10
 project_type_tags:
@@ -26,7 +26,7 @@ deps:
     bin_name: go
 toolkit:
   go:
-    package_name: github.com/bitrise-steplib/steps-export-archive-mac
+    package_name: github.com/bitrise-steplib/steps-export-xcarchive-mac
 inputs:
   - archive_path: $BITRISE_MACOS_XCARCHIVE_PATH
     opts:
