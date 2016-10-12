@@ -5,6 +5,9 @@ app:
   envs:
   # define these in your .bitrise.secrets.yml
   - BITRISE_MACOS_XCARCHIVE_PATH: $BITRISE_MACOS_XCARCHIVE_PATH
+  - TEAM_ID: $TEAM_ID
+  - CUSTOM_EXPORT_OPTIONS_PLIST_CONTENT: $CUSTOM_EXPORT_OPTIONS_PLIST_CONTENT
+  - LEGACY_EXPORT_PROVISIONING_PROFILE_NAME: $LEGACY_EXPORT_PROVISIONING_PROFILE_NAME
 
   - SAMPLE_APP_URL: https://github.com/bitrise-samples/sample-apps-xamarin-cross-platform.git
   - BITRISE_PROJECT_PATH: Multiplatform.sln
@@ -53,26 +56,16 @@ workflows:
         title: Step Test - Export Options
         inputs:
         - export_method: development
-        - team_id: 9NS44DLTN7
+        - team_id: $TEAM_ID
     - path::./:
         title: Step Test - Custom Export Options
         inputs:
-        - custom_export_options_plist_content: |-
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-                <dict>
-                    <key>method</key>
-                    <string>development</string>
-                    <key>teamID</key>
-                    <string>9NS44DLTN7</string>
-                </dict>
-            </plist>
+        - custom_export_options_plist_content: $CUSTOM_EXPORT_OPTIONS_PLIST_CONTENT
     - path::./:
         title: Step Test - Legacy Export
         inputs:
         - use_legacy_export: "yes"
-        - legacy_export_provisioning_profile_name: Mac Development Wildcard
+        - legacy_export_provisioning_profile_name: $LEGACY_EXPORT_PROVISIONING_PROFILE_NAME
     - script:
         title: Output Test
         inputs:
