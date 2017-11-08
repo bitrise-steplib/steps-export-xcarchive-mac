@@ -63,17 +63,20 @@ workflows:
     - path::./:
         title: Step Test - Export Options
         inputs:
-        - export_method: development
+        - export_method: enterprise
         - team_id: $TEAM_ID
     - path::./:
-        title: Step Test - Custom Export Options
+        title: Step Test - Export Options
         inputs:
-        - custom_export_options_plist_content: $CUSTOM_EXPORT_OPTIONS_PLIST_CONTENT
+        - export_method: ad-hoc
     - path::./:
-        title: Step Test - Legacy Export
+        title: Step Test - Export Options
         inputs:
-        - use_legacy_export: "yes"
-        - legacy_export_provisioning_profile_name: $LEGACY_EXPORT_PROVISIONING_PROFILE_NAME
+        - export_method: app-store
+    - path::./:
+        title: Step Test - Export Options
+        inputs:
+        - export_method: developer-id
     - script:
         title: Output Test
         inputs:
