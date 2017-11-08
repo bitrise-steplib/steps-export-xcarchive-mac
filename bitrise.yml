@@ -156,6 +156,7 @@ workflows:
             #!/bin/bash
             set -ex
             go get -u -v github.com/tools/godep
+            go get -u -v github.com/hashicorp/go-version
 
             rm -rf ./Godeps
             rm -rf ./vendor
