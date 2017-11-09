@@ -40,10 +40,9 @@ inputs:
         Describes how Xcode should export the archive.
       value_options:
       - "app-store"
-      - "ad-hoc"
-      - "enterprise"
       - "development"
       - "developer-id"
+      - "none"
       is_required: true
   - upload_bitcode: "yes"
     opts:

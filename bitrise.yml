@@ -63,12 +63,7 @@ workflows:
     - path::./:
         title: Step Test - Export Options
         inputs:
-        - export_method: enterprise
-        - team_id: $TEAM_ID
-    - path::./:
-        title: Step Test - Export Options
-        inputs:
-        - export_method: ad-hoc
+        - export_method: development
     - path::./:
         title: Step Test - Export Options
         inputs:

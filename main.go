@@ -248,7 +248,7 @@ func main() {
 		fail("Failed to parse archive, error: %s", err)
 	}
 
-	mainApplication := archive.Applications.MainApplication
+	mainApplication := archive.Application
 	archiveExportMethod := mainApplication.ProvisioningProfile.ExportType
 	archiveCodeSignIsXcodeManaged := profileutil.IsXcodeManaged(mainApplication.ProvisioningProfile.Name)
 
@@ -271,7 +271,7 @@ func main() {
 		} else {
 			log.Printf("Using embedded provisioing profile")
 
-			provisioningProfileName = archive.Applications.MainApplication.ProvisioningProfile.Name
+			provisioningProfileName = archive.Application.ProvisioningProfile.Name
 			log.Printf("embedded profile name: %s", provisioningProfileName)
 		}
 
@@ -352,7 +352,7 @@ func main() {
 					}
 				}
 
-				installedProfiles, err := profileutil.InstalledProvisioningProfileInfos(profileutil.ProfileTypeIos)
+				installedProfiles, err := profileutil.InstalledProvisioningProfileInfos(profileutil.ProfileTypeMacOs)
 				if err != nil {
 					fail("Failed to get installed provisioning profiles, error: %s", err)
 				}
@@ -366,12 +366,12 @@ func main() {
 					}
 				}
 
-				bundleIDEntitlemnstMap := archive.BundleIDEntitlementsMap()
+				bundleIDEntitlementsMap := archive.BundleIDEntitlementsMap()
 
 				fmt.Println()
-				log.Printf("Target Bundel ID - Entitlements map")
+				log.Printf("Target Bundle ID - Entitlements map")
 				idx := -1
-				for bundleID, entitlements := range bundleIDEntitlemnstMap {
+				for bundleID, entitlements := range bundleIDEntitlementsMap {
 					idx++
 					entitlementKeys := []string{}
 					for key := range entitlements {
@@ -380,7 +380,7 @@ func main() {
 					log.Printf("%s: [%s]", bundleID, strings.Join(entitlementKeys, " "))
 				}
 
-				codeSignGroups := export.ResolveCodeSignGroups(installedCertificates, installedProfiles, bundleIDEntitlemnstMap)
+				codeSignGroups := export.ResolveCodeSignGroups(installedCertificates, installedProfiles, bundleIDEntitlementsMap)
 
 				fmt.Println()
 				log.Printf("Installed codesign settings")
