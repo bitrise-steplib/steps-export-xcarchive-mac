@@ -14,7 +14,7 @@ app:
   - SAMPLE_APP_URL: https://github.com/bitrise-samples/sample-apps-xamarin-cross-platform.git
   - BITRISE_PROJECT_PATH: Multiplatform.sln
   - BITRISE_XAMARIN_CONFIGURATION: Release
-  - BITRISE_XAMARIN_PLATFORM: iPhone
+  - BITRISE_XAMARIN_PLATFORM: ""
 
 workflows:
   ci:
@@ -56,7 +56,7 @@ workflows:
     - xamarin-archive:
         inputs:
         - force_mdtool: "yes"
-        - project_type_whitelist: macos
+        - project_type_whitelist: android,ios,tvos
 
   test:
     steps:
