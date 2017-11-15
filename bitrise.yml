@@ -55,8 +55,7 @@ workflows:
     - nuget-restore:
     - xamarin-archive:
         inputs:
-        - force_mdtool: "yes"
-        - project_type_whitelist: android,ios,tvos
+        - project_type_whitelist: macos
 
   test:
     steps:
