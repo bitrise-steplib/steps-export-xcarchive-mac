@@ -43,7 +43,7 @@ workflows:
         - clone_into_dir: ./
         - commit: ""
         - tag: ""
-        - branch: "mac"
+        - branch: "master"
         - pull_request_id: ""
         - clone_depth: ""
     - certificate-and-profile-installer:
