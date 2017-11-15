@@ -24,13 +24,24 @@ type ProvisioningProfileInfoModel struct {
 	ExportType            exportoptions.Method
 	ProvisionedDevices    []string
 	DeveloperCertificates []certificateutil.CertificateInfoModel
+	CreationDate          time.Time
 	ExpirationDate        time.Time
 	Entitlements          plistutil.PlistData
+	ProvisionsAllDevices  bool
 }
 
 // IsXcodeManaged ...
 func IsXcodeManaged(profileName string) bool {
-	return strings.HasPrefix(profileName, "XC") || (strings.HasPrefix(profileName, "iOS Team") && strings.Contains(profileName, "Provisioning Profile"))
+	if strings.HasPrefix(profileName, "XC") {
+		return true
+	}
+	if strings.HasPrefix(profileName, "iOS Team") && strings.Contains(profileName, "Provisioning Profile") {
+		return true
+	}
+	if strings.HasPrefix(profileName, "Mac Team") && strings.Contains(profileName, "Provisioning Profile") {
+		return true
+	}
+	return false
 }
 
 // IsXcodeManaged ...
@@ -68,28 +79,19 @@ func NewProvisioningProfileInfo(provisioningProfile pkcs7.PKCS7, profileType ...
 		return ProvisioningProfileInfoModel{}, err
 	}
 
-	isMacOS := false
-
-	if len(profileType) > 0 {
-		isMacOS = profileType[0] == ProfileTypeMacOs
-	}
-
-	teamName, _ := data.GetString("TeamName")
 	profile := PlistData(data)
 	info := ProvisioningProfileInfoModel{
-		UUID:           profile.GetUUID(),
-		Name:           profile.GetName(),
-		TeamName:       teamName,
-		TeamID:         profile.GetTeamID(),
-		BundleID:       profile.GetBundleIdentifier(),
-		ExpirationDate: profile.GetExpirationDate(),
+		UUID:                 profile.GetUUID(),
+		Name:                 profile.GetName(),
+		TeamName:             profile.GetTeamName(),
+		TeamID:               profile.GetTeamID(),
+		BundleID:             profile.GetBundleIdentifier(),
+		CreationDate:         profile.GetCreationDate(),
+		ExpirationDate:       profile.GetExpirationDate(),
+		ProvisionsAllDevices: profile.GetProvisionsAllDevices(),
 	}
 
-	if !isMacOS {
-		info.ExportType = profile.GetExportMethod()
-	} else {
-		info.ExportType = profile.GetExportMethodMac()
-	}
+	info.ExportType = profile.GetExportMethod(profileType...)
 
 	if devicesList := profile.GetProvisionedDevices(); devicesList != nil {
 		info.ProvisionedDevices = devicesList
@@ -119,7 +121,13 @@ func NewProvisioningProfileInfoFromFile(pth string) (ProvisioningProfileInfoMode
 		return ProvisioningProfileInfoModel{}, err
 	}
 	if provisioningProfile != nil {
-		return NewProvisioningProfileInfo(*provisioningProfile)
+		profileType := []ProfileType{}
+
+		if strings.HasSuffix(pth, ".provisionprofile") {
+			profileType = append(profileType, ProfileTypeMacOs)
+		}
+
+		return NewProvisioningProfileInfo(*provisioningProfile, profileType...)
 	}
 	return ProvisioningProfileInfoModel{}, errors.New("failed to parse provisioning profile infos")
 }

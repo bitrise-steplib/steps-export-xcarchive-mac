@@ -63,15 +63,15 @@ workflows:
     - path::./:
         title: Step Test - Export Options
         inputs:
-        - export_method: development
-    - path::./:
-        title: Step Test - Export Options
-        inputs:
         - export_method: app-store
     - path::./:
         title: Step Test - Export Options
         inputs:
         - export_method: developer-id
+    - path::./:
+        title: Step Test - Export Options
+        inputs:
+        - export_method: none
     - script:
         title: Output Test
         inputs:

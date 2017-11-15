@@ -248,18 +248,6 @@ func main() {
 		fail("Failed to parse archive, error: %s", err)
 	}
 
-	mainApplication := archive.Application
-	archiveExportMethod := mainApplication.ProvisioningProfile.ExportType
-	archiveCodeSignIsXcodeManaged := profileutil.IsXcodeManaged(mainApplication.ProvisioningProfile.Name)
-
-	fmt.Println()
-	log.Infof("Archive infos:")
-	log.Printf("team: %s (%s)", mainApplication.ProvisioningProfile.TeamName, mainApplication.ProvisioningProfile.TeamID)
-	log.Printf("profile: %s (%s)", mainApplication.ProvisioningProfile.Name, mainApplication.ProvisioningProfile.UUID)
-	log.Printf("export: %s", archiveExportMethod)
-	log.Printf("xcode managed profile: %v", archiveCodeSignIsXcodeManaged)
-	fmt.Println()
-
 	if configs.UseLegacyExport == "yes" {
 		log.Infof("Using legacy export method...")
 
@@ -269,7 +257,7 @@ func main() {
 
 			provisioningProfileName = configs.LegacyExportProvisioningProfileName
 		} else {
-			log.Printf("Using embedded provisioing profile")
+			log.Printf("Using embedded provisioning profile")
 
 			provisioningProfileName = archive.Application.ProvisioningProfile.Name
 			log.Printf("embedded profile name: %s", provisioningProfileName)
@@ -406,19 +394,6 @@ func main() {
 					}
 				}
 
-				// Handle if archive used NON xcode managed profile
-				if len(codeSignGroups) > 0 && !archiveCodeSignIsXcodeManaged {
-					log.Warnf("App was signed with NON xcode managed profile when archiving,")
-					log.Warnf("only NOT xcode managed profiles are allowed to sign when exporting the archive.")
-					log.Warnf("Removing xcode managed CodeSignInfo groups")
-
-					codeSignGroups = export.FilterCodeSignGroupsForNotXcodeManagedProfiles(codeSignGroups)
-
-					if len(codeSignGroups) == 0 {
-						log.Errorf("Failed to find code singing groups for specified export method (%s) and WITHOUT xcode managed profiles", exportMethod)
-					}
-				}
-
 				// Filter for specified export team
 				if len(codeSignGroups) > 0 && configs.TeamID != "" {
 					log.Warnf("Export TeamID specified: %s, filtering CodeSignInfo groups...", configs.TeamID)
@@ -498,14 +473,6 @@ func main() {
 					options.BundleIDProvisioningProfileMapping = exportProfileMapping
 					options.SigningCertificate = exportCodeSignIdentity
 					options.TeamID = exportTeamID
-
-					if archiveCodeSignIsXcodeManaged && exportCodeSignStyle == "manual" {
-						log.Warnf("App was signed with xcode managed profile when archiving,")
-						log.Warnf("ipa export uses manual code singing.")
-						log.Warnf(`Setting "signingStyle" to "manual"`)
-
-						options.SigningStyle = "manual"
-					}
 				}
 
 				exportOpts = options
@@ -517,14 +484,6 @@ func main() {
 					options.BundleIDProvisioningProfileMapping = exportProfileMapping
 					options.SigningCertificate = exportCodeSignIdentity
 					options.TeamID = exportTeamID
-
-					if archiveCodeSignIsXcodeManaged && exportCodeSignStyle == "manual" {
-						log.Warnf("App was signed with xcode managed profile when archiving,")
-						log.Warnf("ipa export uses manual code singing.")
-						log.Warnf(`Setting "signingStyle" to "manual"`)
-
-						options.SigningStyle = "manual"
-					}
 				}
 
 				exportOpts = options
@@ -577,7 +536,7 @@ is available in the $BITRISE_IDEDISTRIBUTION_LOGS_PATH environment variable`)
 		}
 
 		if len(apps) > 0 {
-			if err := utils.ExportOutputFile(apps[0], appPath, bitriseAppPathEnvKey); err != nil {
+			if err := utils.ExportOutputDirAsZip(apps[0], appPath, bitriseAppPathEnvKey); err != nil {
 				fail("Failed to export %s, error: %s", bitriseAppPathEnvKey, err)
 			}
 
