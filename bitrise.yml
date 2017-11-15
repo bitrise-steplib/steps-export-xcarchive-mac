@@ -14,7 +14,7 @@ app:
   - SAMPLE_APP_URL: https://github.com/bitrise-samples/sample-apps-xamarin-cross-platform.git
   - BITRISE_PROJECT_PATH: Multiplatform.sln
   - BITRISE_XAMARIN_CONFIGURATION: Release
-  - BITRISE_XAMARIN_PLATFORM: ""
+  - BITRISE_XAMARIN_PLATFORM: AnyCPU
 
 workflows:
   ci:
