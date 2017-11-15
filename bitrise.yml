@@ -5,16 +5,7 @@ app:
   envs:
   - RELEASE_VERSION: 0.9.2
 
-  # define these in your .bitrise.secrets.yml
-  - BITRISE_MACOS_XCARCHIVE_PATH: $BITRISE_MACOS_XCARCHIVE_PATH
-  - TEAM_ID: $TEAM_ID
-  - CUSTOM_EXPORT_OPTIONS_PLIST_CONTENT: $CUSTOM_EXPORT_OPTIONS_PLIST_CONTENT
-  - LEGACY_EXPORT_PROVISIONING_PROFILE_NAME: $LEGACY_EXPORT_PROVISIONING_PROFILE_NAME
-
-  - SAMPLE_APP_URL: https://github.com/bitrise-samples/sample-apps-xamarin-cross-platform.git
-  - BITRISE_PROJECT_PATH: Multiplatform.sln
-  - BITRISE_XAMARIN_CONFIGURATION: Release
-  - BITRISE_XAMARIN_PLATFORM: Any CPU
+  - SAMPLE_APP_URL: https://github.com/bitrise-samples/macos-sample-app.git
 
 workflows:
   ci:
@@ -51,11 +42,12 @@ workflows:
         - default_certificate_url: ""
         - default_certificate_passphrase: ""
         - default_provisioning_profile_url: ""
-    - xamarin-user-management:
-    - nuget-restore:
-    - xamarin-archive:
+    - xcode-archive-mac:
         inputs:
-        - project_type_whitelist: macos
+        - project_path: ./macos-sample-app.xcodeproj
+        - scheme: macos-sample-app
+        - export_method: app-store
+        - output_tool: xcodebuild
 
   test:
     steps:
