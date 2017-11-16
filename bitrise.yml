@@ -4,17 +4,8 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 app:
   envs:
   - RELEASE_VERSION: 0.9.2
-
-  # define these in your .bitrise.secrets.yml
-  - BITRISE_MACOS_XCARCHIVE_PATH: $BITRISE_MACOS_XCARCHIVE_PATH
-  - TEAM_ID: $TEAM_ID
-  - CUSTOM_EXPORT_OPTIONS_PLIST_CONTENT: $CUSTOM_EXPORT_OPTIONS_PLIST_CONTENT
-  - LEGACY_EXPORT_PROVISIONING_PROFILE_NAME: $LEGACY_EXPORT_PROVISIONING_PROFILE_NAME
-
-  - SAMPLE_APP_URL: https://github.com/bitrise-samples/sample-apps-xamarin-cross-platform.git
-  - BITRISE_PROJECT_PATH: Multiplatform.sln
-  - BITRISE_XAMARIN_CONFIGURATION: Release
-  - BITRISE_XAMARIN_PLATFORM: iPhone
+  - EXPORT_PLIST: $EXPORT_PLIST
+  - SAMPLE_APP_URL: https://github.com/bitrise-samples/macos-sample-app.git
 
 workflows:
   ci:
@@ -51,29 +42,28 @@ workflows:
         - default_certificate_url: ""
         - default_certificate_passphrase: ""
         - default_provisioning_profile_url: ""
-    - xamarin-user-management:
-    - nuget-restore:
-    - xamarin-archive:
+    - xcode-archive-mac:
         inputs:
-        - force_mdtool: "yes"
-        - project_type_whitelist: macos
+        - project_path: ./macos-sample-app.xcodeproj
+        - scheme: macos-sample-app
+        - export_method: app-store
+        - output_tool: xcodebuild
+        - custom_export_options_plist_content: $EXPORT_PLIST
 
   test:
     steps:
     - path::./:
         title: Step Test - Export Options
         inputs:
-        - export_method: development
-        - team_id: $TEAM_ID
+        - export_method: app-store
     - path::./:
-        title: Step Test - Custom Export Options
+        title: Step Test - Export Options
         inputs:
-        - custom_export_options_plist_content: $CUSTOM_EXPORT_OPTIONS_PLIST_CONTENT
+        - export_method: developer-id
     - path::./:
-        title: Step Test - Legacy Export
+        title: Step Test - Export Options
         inputs:
-        - use_legacy_export: "yes"
-        - legacy_export_provisioning_profile_name: $LEGACY_EXPORT_PROVISIONING_PROFILE_NAME
+        - export_method: none
     - script:
         title: Output Test
         inputs:
@@ -156,6 +146,7 @@ workflows:
             #!/bin/bash
             set -ex
             go get -u -v github.com/tools/godep
+            go get -u -v github.com/hashicorp/go-version
 
             rm -rf ./Godeps
             rm -rf ./vendor
