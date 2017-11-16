@@ -3,6 +3,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
+  - BITRISE_MACOS_XCARCHIVE_PATH: $BITRISE_MACOS_XCARCHIVE_PATH
   - RELEASE_VERSION: 0.9.2
   - EXPORT_PLIST: $EXPORT_PLIST
   - SAMPLE_APP_URL: https://github.com/bitrise-samples/macos-sample-app.git

@@ -23,15 +23,20 @@ type CertificateInfoModel struct {
 }
 
 // CheckValidity ...
-func (info CertificateInfoModel) CheckValidity() error {
+func CheckValidity(certificate x509.Certificate) error {
 	timeNow := time.Now()
-	if !timeNow.After(info.StartDate) {
-		return fmt.Errorf("Certificate is not yet valid - validity starts at: %s", info.StartDate)
+	if !timeNow.After(certificate.NotBefore) {
+		return fmt.Errorf("Certificate is not yet valid - validity starts at: %s", certificate.NotBefore)
 	}
-	if !timeNow.Before(info.EndDate) {
-		return fmt.Errorf("Certificate is not valid anymore - validity ended at: %s", info.EndDate)
+	if !timeNow.Before(certificate.NotAfter) {
+		return fmt.Errorf("Certificate is not valid anymore - validity ended at: %s", certificate.NotAfter)
 	}
 	return nil
+}
+
+// CheckValidity ...
+func (info CertificateInfoModel) CheckValidity() error {
+	return CheckValidity(info.certificate)
 }
 
 // NewCertificateInfo ...
@@ -82,22 +87,11 @@ func InstalledCodesigningCertificateInfos() ([]CertificateInfoModel, error) {
 	return CertificateInfos(certificates), nil
 }
 
-// FilterValidCertificateInfos ...
-func FilterValidCertificateInfos(certificateInfos []CertificateInfoModel) []CertificateInfoModel {
-	certificateInfosByName := map[string]CertificateInfoModel{}
-
-	for _, certificateInfo := range certificateInfos {
-		if certificateInfo.CheckValidity() == nil {
-			activeCertificate, ok := certificateInfosByName[certificateInfo.CommonName]
-			if !ok || certificateInfo.EndDate.After(activeCertificate.EndDate) {
-				certificateInfosByName[certificateInfo.CommonName] = certificateInfo
-			}
-		}
+// InstalledMacAppStoreCertificateInfos ...
+func InstalledMacAppStoreCertificateInfos() ([]CertificateInfoModel, error) {
+	certificates, err := InstalledMacAppStoreCertificates()
+	if err != nil {
+		return nil, err
 	}
-
-	validCertificates := []CertificateInfoModel{}
-	for _, validCertificate := range certificateInfosByName {
-		validCertificates = append(validCertificates, validCertificate)
-	}
-	return validCertificates
+	return CertificateInfos(certificates), nil
 }
