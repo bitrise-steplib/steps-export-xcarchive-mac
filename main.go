@@ -202,11 +202,6 @@ func main() {
 	exportOptionsPath := filepath.Join(configs.DeployDir, "export_options.plist")
 	ideDistributionLogsZipPath := filepath.Join(configs.DeployDir, "xcodebuild.xcdistributionlogs.zip")
 
-	exportMethod, err := exportoptions.ParseMethod(configs.ExportMethod)
-	if err != nil {
-		fail("Failed to parse export options, error: %s", err)
-	}
-
 	xcodebuildVersion, err := utility.GetXcodeVersion()
 	if err != nil {
 		fail("Failed to determin xcode version, error: %s", err)
@@ -244,6 +239,11 @@ func main() {
 			log.Donef("The app path is now available in the Environment Variable: %s", bitriseAppPathEnvKey)
 			return
 		}
+	}
+
+	exportMethod, err := exportoptions.ParseMethod(configs.ExportMethod)
+	if err != nil {
+		fail("Failed to parse export options, error: %s", err)
 	}
 
 	// legacy export
