@@ -226,6 +226,48 @@ func main() {
 		fail("Issue with input: %s", err)
 	}
 
+	archiveExt := filepath.Ext(configs.ArchivePath)
+	archiveName := filepath.Base(configs.ArchivePath)
+	archiveName = strings.TrimSuffix(archiveName, archiveExt)
+
+	appPath := filepath.Join(configs.DeployDir, archiveName+".app")
+	pkgPath := filepath.Join(configs.DeployDir, archiveName+".pkg")
+	exportOptionsPath := filepath.Join(configs.DeployDir, "export_options.plist")
+
+	exportMethod := exportoptions.MethodNone
+
+	if configs.ExportMethod != "none" {
+		var err error
+		exportMethod, err = exportoptions.ParseMethod(configs.ExportMethod)
+		if err != nil {
+			fail("Failed to parse export options, error: %s", err)
+		}
+	}
+
+	if exportMethod == exportoptions.MethodNone {
+		log.Infof("Exporting app without re-sign...")
+
+		appPattern := filepath.Join(configs.ArchivePath, "Products/Applications/*.app")
+		pths, err := filepath.Glob(appPattern)
+		if err != nil {
+			fail("Failed to execute pattern, error: ", err)
+		}
+
+		sourcePath := ""
+		if len(pths) > 0 {
+			sourcePath = pths[0]
+		} else {
+			fail("Failed to find main app, using pattern: %s", appPattern)
+		}
+
+		if err := utils.ExportOutputDirAsZip(sourcePath, appPath, bitriseAppPathEnvKey); err != nil {
+			fail("Failed to export %s, error: %s", bitriseAppPathEnvKey, err)
+		}
+
+		log.Donef("The app path is now available in the Environment Variable: %s (value: %s)", bitriseAppPathEnvKey, appPath)
+		return
+	}
+
 	xcodebuildVersion, err := utility.GetXcodeVersion()
 	if err != nil {
 		fail("Failed to determin xcode version, error: %s", err)
@@ -243,14 +285,6 @@ func main() {
 		log.Warnf("CustomExportOptionsPlistContent is stripped to remove spaces and new lines:")
 		log.Printf(customExportOptionsPlistContent)
 	}
-
-	archiveExt := filepath.Ext(configs.ArchivePath)
-	archiveName := filepath.Base(configs.ArchivePath)
-	archiveName = strings.TrimSuffix(archiveName, archiveExt)
-
-	appPath := filepath.Join(configs.DeployDir, archiveName+".app")
-	pkgPath := filepath.Join(configs.DeployDir, archiveName+".pkg")
-	exportOptionsPath := filepath.Join(configs.DeployDir, "export_options.plist")
 
 	ideDistributionLogsZipPath := filepath.Join(configs.DeployDir, "xcodebuild.xcdistributionlogs.zip")
 
@@ -330,11 +364,6 @@ func main() {
 			}
 		} else {
 			log.Printf("Generating export options")
-
-			exportMethod, err := exportoptions.ParseMethod(configs.ExportMethod)
-			if err != nil {
-				fail("Failed to parse export options, error: %s", err)
-			}
 
 			exportTeamID := ""
 			exportCodeSignIdentity := ""
