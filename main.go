@@ -161,37 +161,37 @@ func printProfileInfo(info profileutil.ProvisioningProfileInfoModel, installedCe
 	}
 }
 
-func printCodesignGroup(group export.CodeSignGroup) {
-	fmt.Printf("development team: %s (%s)\n", group.Certificate.TeamName, group.Certificate.TeamID)
-	fmt.Printf("codesign identity: %s [%s]\n", group.Certificate.CommonName, group.Certificate.Serial)
-	idx := -1
-	for bundleID, profile := range group.BundleIDProfileMap {
-		idx++
-		if idx == 0 {
-			fmt.Printf("provisioning profiles: %s -> %s\n", profile.Name, bundleID)
-		} else {
-			fmt.Printf("%s%s -> %s\n", strings.Repeat(" ", len("provisioning profiles: ")), profile.Name, bundleID)
-		}
-	}
-}
+// func printCodesignGroup(group export.SelectableCodeSignGroup) {
+// 	fmt.Printf("development team: %s (%s)\n", group.Certificate.TeamName, group.Certificate.TeamID)
+// 	fmt.Printf("codesign identity: %s [%s]\n", group.Certificate.CommonName, group.Certificate.Serial)
+// 	idx := -1
+// 	for bundleID, profile := range group.BundleIDProfileMap {
+// 		idx++
+// 		if idx == 0 {
+// 			fmt.Printf("provisioning profiles: %s -> %s\n", profile.Name, bundleID)
+// 		} else {
+// 			fmt.Printf("%s%s -> %s\n", strings.Repeat(" ", len("provisioning profiles: ")), profile.Name, bundleID)
+// 		}
+// 	}
+// }
 
-func printCodesignGroupMac(group export.CodeSignGroupMac) {
-	fmt.Printf("development team: %s (%s)\n", group.Certificate.TeamName, group.Certificate.TeamID)
-	fmt.Printf("codesign identity: %s [%s]\n", group.Certificate.CommonName, group.Certificate.Serial)
-	if group.InstallerCertificate.CommonName != "" {
-		fmt.Printf("installer codesign identity: %s [%s]\n", group.InstallerCertificate.CommonName, group.InstallerCertificate.Serial)
-	}
-	fmt.Printf("codesign identity: %s [%s]\n", group.Certificate.CommonName, group.Certificate.Serial)
-	idx := -1
-	for bundleID, profile := range group.BundleIDProfileMap {
-		idx++
-		if idx == 0 {
-			fmt.Printf("provisioning profiles: %s -> %s\n", profile.Name, bundleID)
-		} else {
-			fmt.Printf("%s%s -> %s\n", strings.Repeat(" ", len("provisioning profiles: ")), profile.Name, bundleID)
-		}
-	}
-}
+// func printCodesignGroupMac(group export.SelectableCodeSignGroup) {
+// 	fmt.Printf("development team: %s (%s)\n", group.Certificate.TeamName, group.Certificate.TeamID)
+// 	fmt.Printf("codesign identity: %s [%s]\n", group.Certificate.CommonName, group.Certificate.Serial)
+// 	if group.InstallerCertificate.CommonName != "" {
+// 		fmt.Printf("installer codesign identity: %s [%s]\n", group.InstallerCertificate.CommonName, group.InstallerCertificate.Serial)
+// 	}
+// 	fmt.Printf("codesign identity: %s [%s]\n", group.Certificate.CommonName, group.Certificate.Serial)
+// 	idx := -1
+// 	for bundleID, profile := range group.BundleIDProfileMap {
+// 		idx++
+// 		if idx == 0 {
+// 			fmt.Printf("provisioning profiles: %s -> %s\n", profile.Name, bundleID)
+// 		} else {
+// 			fmt.Printf("%s%s -> %s\n", strings.Repeat(" ", len("provisioning profiles: ")), profile.Name, bundleID)
+// 		}
+// 	}
+// }
 
 func fail(format string, v ...interface{}) {
 	log.Errorf(format, v...)
@@ -360,11 +360,11 @@ func main() {
 		} else {
 			log.Printf("Generating export options")
 
-			exportTeamID := ""
-			exportCodeSignIdentity := ""
-			exportProfileMapping := map[string]string{}
-			exportCodeSignStyle := ""
-			exportInstallerCertificate := certificateutil.CertificateInfoModel{}
+			// exportTeamID := ""
+			// exportCodeSignIdentity := ""
+			// exportProfileMapping := map[string]string{}
+			// exportCodeSignStyle := ""
+			// exportInstallerCertificate := certificateutil.CertificateInfoModel{}
 
 			if xcodebuildVersion.MajorVersion >= 9 {
 				log.Printf("xcode major version > 9, generating provisioningProfiles node")
@@ -415,169 +415,76 @@ func main() {
 					log.Printf("%s: [%s]", bundleID, strings.Join(entitlementKeys, " "))
 				}
 
-				codeSignGroups := export.ResolveCodeSignGroups(installedCertificates, installedProfiles, bundleIDs)
+				codeSignGroups := export.CreateSelectableCodeSignGroups(installedCertificates, installedProfiles, bundleIDs)
 
 				fmt.Println()
-				log.Printf("Installed codesign settings")
-				for idx, group := range codeSignGroups {
-					printCodesignGroup(group)
-					if idx < len(codeSignGroups)-1 {
-						fmt.Println()
-					}
-				}
+				// log.Printf("Installed codesign settings")
+				// for idx, group := range codeSignGroups {
+				// 	//printCodesignGroup(group)
+				// 	if idx < len(codeSignGroups)-1 {
+				// 		fmt.Println()
+				// 	}
+				// }
 
 				if len(codeSignGroups) == 0 {
 					log.Errorf("Failed to find code singing groups for specified export method (%s)", exportMethod)
 				}
 
-				// Filter for specified export method
-				if len(codeSignGroups) > 0 && configs.ExportMethod != "" {
-					log.Warnf("Filtering CodeSignInfo groups for export method: %s...", exportMethod)
+				codeSignGroups = export.FilterSelectableCodeSignGroups(codeSignGroups,
+					export.CreateEntitlementsSelectableCodeSignGroupFilter(bundleIDEntitlementsMap),
+					export.CreateExportMethodSelectableCodeSignGroupFilter(exportMethod),
+				)
 
-					codeSignGroups = export.FilterCodeSignGroupsForExportMethod(codeSignGroups, exportMethod)
-
-					if len(codeSignGroups) == 0 {
-						log.Errorf("Failed to find code singing groups for specified export method (%s)", exportMethod)
-					}
+				installedMacAppStoreCertificates, err := certificateutil.InstalledMacAppStoreCertificateInfos()
+				if err != nil {
+					log.Errorf("Failed to read installed Installer certificates, error: %s", err)
 				}
 
-				// Filter for specified export team
-				if len(codeSignGroups) > 0 && configs.TeamID != "" {
-					log.Warnf("Export TeamID specified: %s, filtering CodeSignInfo groups...", configs.TeamID)
-
-					codeSignGroups = export.FilterCodeSignGroupsForTeam(codeSignGroups, configs.TeamID)
-
-					if len(codeSignGroups) == 0 {
-						log.Errorf("Failed to find code singing groups for specified export method (%s) and team (%s)", exportMethod, configs.TeamID)
-					}
+				var macCodeSignGroup *export.MacCodeSignGroup
+				macCodeSignGroups := export.CreateMacCodeSignGroup(codeSignGroups, installedMacAppStoreCertificates, exportMethod)
+				if len(macCodeSignGroups) == 0 {
+					log.Errorf("Can not create macos codesiging groups for the project")
+				} else if len(macCodeSignGroups) > 1 {
+					log.Warnf("Multiple matching  codesiging groups found for the project, using first...")
+					macCodeSignGroup = &(macCodeSignGroups[0])
+				} else {
+					macCodeSignGroup = &(macCodeSignGroups[0])
 				}
 
-				// Filter out default code sign files
-				if len(codeSignGroups) > 0 && configs.TeamID == "" {
-					if defaultProfile, err := utils.GetDefaultProvisioningProfile(); err == nil && defaultProfile.TeamID != "" {
-						filteredGroups := []export.CodeSignGroup{}
-						for _, group := range codeSignGroups {
-							if group.Certificate.TeamID != defaultProfile.TeamID {
-								filteredGroups = append(filteredGroups, group)
-							}
-						}
-
-						if len(filteredGroups) > 0 {
-							codeSignGroups = filteredGroups
-						}
-					}
-				}
-
-				codeSignGroupsMac := []export.CodeSignGroupMac{}
-
-				if len(codeSignGroups) > 0 {
-					if exportMethod == exportoptions.MethodAppStore {
-						log.Warnf("Filter codesign by installed Installer certificates")
-
-						installedMacAppStoreCertificates, err := certificateutil.InstalledMacAppStoreCertificateInfos()
-						if err != nil {
-							log.Errorf("Failed to read installed Installer certificates, error: %s", err)
-						}
-
-						// Filter installerCertificates when method is AppStore otherwise fallback to true
-						installedInstallerCertificates := certificateutil.FilterCertificateInfoModelsByFilterFunc(installedMacAppStoreCertificates,
-							func(cert certificateutil.CertificateInfoModel) bool {
-								if exportMethod == exportoptions.MethodAppStore {
-									return strings.Contains(cert.CommonName, "Installer")
-								}
-								return true
-							})
-
-						codeSignGroupsMac = export.FilterCodeSignGroupsForInstallerCertificate(codeSignGroups, installedInstallerCertificates)
-
-						if len(codeSignGroupsMac) == 0 {
-							log.Errorf("Failed to find code singing groups for specified export method (%s) and team (%s)", exportMethod, configs.TeamID)
-						}
-					} else {
-						for _, codeSignGroup := range codeSignGroups {
-							codeSignGroupsMac = append(codeSignGroupsMac, export.CodeSignGroupMac{CodeSignGroup: codeSignGroup})
-						}
-					}
-				}
-
-				fmt.Println()
-				log.Printf("Filtered codesign settings")
-				for idx, group := range codeSignGroupsMac {
-					printCodesignGroupMac(group)
-					if idx < len(codeSignGroupsMac)-1 {
-						fmt.Println()
-					}
-				}
-
-				if len(codeSignGroupsMac) > 0 {
-					codeSignGroup := export.CodeSignGroupMac{}
-
-					if len(codeSignGroupsMac) == 1 {
-						codeSignGroup = codeSignGroupsMac[0]
-					} else if len(codeSignGroupsMac) > 1 {
-						log.Warnf("Multiple code singing groups found")
-
-						codeSignGroup = codeSignGroupsMac[0]
-						log.Warnf("Using first group")
-					}
-
-					exportTeamID = codeSignGroup.Certificate.TeamID
-					exportCodeSignIdentity = codeSignGroup.Certificate.CommonName
-					exportInstallerCertificate = codeSignGroup.InstallerCertificate
-
-					for bundleID, profileInfo := range codeSignGroup.BundleIDProfileMap {
+				exportProfileMapping := map[string]string{}
+				if macCodeSignGroup != nil {
+					for bundleID, profileInfo := range macCodeSignGroup.BundleIDProfileMap {
 						exportProfileMapping[bundleID] = profileInfo.Name
-
-						isXcodeManaged := profileutil.IsXcodeManaged(profileInfo.Name)
-						if isXcodeManaged {
-							if exportCodeSignStyle != "" && exportCodeSignStyle != "automatic" {
-								log.Errorf("Both xcode managed and NON xcode managed profiles in code singing group")
-							}
-							exportCodeSignStyle = "automatic"
-						} else {
-							if exportCodeSignStyle != "" && exportCodeSignStyle != "manual" {
-								log.Errorf("Both xcode managed and NON xcode managed profiles in code singing group")
-							}
-							exportCodeSignStyle = "manual"
-						}
 					}
 				}
-			}
 
-			var exportOpts exportoptions.ExportOptions
-			if exportMethod == exportoptions.MethodAppStore {
-				options := exportoptions.NewAppStoreOptions()
-				options.UploadBitcode = (configs.UploadBitcode == "yes")
+				var exportOpts exportoptions.ExportOptions
+				if exportMethod == exportoptions.MethodAppStore {
+					options := exportoptions.NewAppStoreOptions()
 
-				if xcodebuildVersion.MajorVersion >= 9 {
-					options.BundleIDProvisioningProfileMapping = exportProfileMapping
-					options.SigningCertificate = exportCodeSignIdentity
-					options.TeamID = exportTeamID
+					if macCodeSignGroup != nil {
+						options.BundleIDProvisioningProfileMapping = exportProfileMapping
+						options.SigningCertificate = macCodeSignGroup.Certificate.CommonName
+						options.InstallerSigningCertificate = macCodeSignGroup.InstallerCertificate.CommonName
+					}
+
+					exportOpts = options
+				} else {
+					options := exportoptions.NewNonAppStoreOptions(exportMethod)
+
+					if macCodeSignGroup != nil {
+						options.BundleIDProvisioningProfileMapping = exportProfileMapping
+						options.SigningCertificate = macCodeSignGroup.Certificate.CommonName
+					}
 				}
 
-				options.InstallerSigningCertificate = exportInstallerCertificate.CommonName
+				log.Printf("generated export options content:")
+				fmt.Println()
+				fmt.Println(exportOpts.String())
 
-				exportOpts = options
-			} else {
-				options := exportoptions.NewNonAppStoreOptions(exportMethod)
-				options.CompileBitcode = (configs.CompileBitcode == "yes")
-
-				if xcodebuildVersion.MajorVersion >= 9 {
-					options.BundleIDProvisioningProfileMapping = exportProfileMapping
-					options.SigningCertificate = exportCodeSignIdentity
-					options.TeamID = exportTeamID
+				if err = exportOpts.WriteToFile(exportOptionsPath); err != nil {
+					fail("Failed to write export options to file, error: %s", err)
 				}
-
-				exportOpts = options
-			}
-
-			fmt.Println()
-			log.Printf("generated export options content:")
-			fmt.Println()
-			fmt.Println(exportOpts.String())
-
-			if err = exportOpts.WriteToFile(exportOptionsPath); err != nil {
-				fail("Failed to write export options to file, error: %s", err)
 			}
 		}
 
