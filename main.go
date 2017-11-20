@@ -444,6 +444,12 @@ func main() {
 					return strings.Contains(cert.CommonName, "Installer")
 				})
 
+				// DEBUG
+				if configs.ExportMethod != "app-store" {
+					installedMacAppStoreCertificates = installedCertificates
+				}
+				// DEBUG
+
 				var macCodeSignGroup *export.MacCodeSignGroup
 				macCodeSignGroups := export.CreateMacCodeSignGroup(codeSignGroups, installedMacAppStoreCertificates, exportMethod)
 				if len(macCodeSignGroups) == 0 {
