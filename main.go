@@ -360,12 +360,6 @@ func main() {
 		} else {
 			log.Printf("Generating export options")
 
-			// exportTeamID := ""
-			// exportCodeSignIdentity := ""
-			// exportProfileMapping := map[string]string{}
-			// exportCodeSignStyle := ""
-			// exportInstallerCertificate := certificateutil.CertificateInfoModel{}
-
 			if xcodebuildVersion.MajorVersion >= 9 {
 				log.Printf("xcode major version > 9, generating provisioningProfiles node")
 
@@ -416,15 +410,6 @@ func main() {
 				}
 
 				codeSignGroups := export.CreateSelectableCodeSignGroups(installedCertificates, installedProfiles, bundleIDs)
-
-				fmt.Println()
-				// log.Printf("Installed codesign settings")
-				// for idx, group := range codeSignGroups {
-				// 	//printCodesignGroup(group)
-				// 	if idx < len(codeSignGroups)-1 {
-				// 		fmt.Println()
-				// 	}
-				// }
 
 				if len(codeSignGroups) == 0 {
 					log.Errorf("Failed to find code singing groups for specified export method (%s)", exportMethod)
