@@ -440,6 +440,10 @@ func main() {
 					log.Errorf("Failed to read installed Installer certificates, error: %s", err)
 				}
 
+				installedMacAppStoreCertificates = certificateutil.FilterCertificateInfoModelsByFilterFunc(installedMacAppStoreCertificates, func(cert certificateutil.CertificateInfoModel) bool {
+					return strings.Contains(cert.CommonName, "Installer")
+				})
+
 				var macCodeSignGroup *export.MacCodeSignGroup
 				macCodeSignGroups := export.CreateMacCodeSignGroup(codeSignGroups, installedMacAppStoreCertificates, exportMethod)
 				if len(macCodeSignGroups) == 0 {
