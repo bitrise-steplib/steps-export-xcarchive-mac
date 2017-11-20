@@ -486,6 +486,8 @@ func main() {
 						options.BundleIDProvisioningProfileMapping = exportProfileMapping
 						options.SigningCertificate = macCodeSignGroup.Certificate.CommonName
 					}
+
+					exportOpts = options
 				}
 
 				log.Printf("generated export options content:")
