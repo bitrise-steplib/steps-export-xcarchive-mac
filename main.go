@@ -234,17 +234,7 @@ func main() {
 	pkgPath := filepath.Join(configs.DeployDir, archiveName+".pkg")
 	exportOptionsPath := filepath.Join(configs.DeployDir, "export_options.plist")
 
-	exportMethod := exportoptions.MethodNone
-
-	if configs.ExportMethod != "none" {
-		var err error
-		exportMethod, err = exportoptions.ParseMethod(configs.ExportMethod)
-		if err != nil {
-			fail("Failed to parse export options, error: %s", err)
-		}
-	}
-
-	if exportMethod == exportoptions.MethodNone {
+	if configs.ExportMethod == "none" {
 		log.Infof("Exporting app without re-sign...")
 
 		appPattern := filepath.Join(configs.ArchivePath, "Products/Applications/*.app")
@@ -266,6 +256,11 @@ func main() {
 
 		log.Donef("The app path is now available in the Environment Variable: %s (value: %s)", bitriseAppPathEnvKey, appPath)
 		return
+	}
+
+	exportMethod, err := exportoptions.ParseMethod(configs.ExportMethod)
+	if err != nil {
+		fail("Failed to parse export options, error: %s", err)
 	}
 
 	xcodebuildVersion, err := utility.GetXcodeVersion()
