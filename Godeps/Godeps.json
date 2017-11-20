@@ -39,11 +39,6 @@
 			"Rev": "e25bd13153e87e91289343f55b3ee8d3228fb7ac"
 		},
 		{
-			"ImportPath": "github.com/bitrise-io/steps-xcode-archive/utils",
-			"Comment": "2.3.7-2-g4cd6cef",
-			"Rev": "4cd6cefd3d75dc2fe2352e02fda0b31f6fec8d40"
-		},
-		{
 			"ImportPath": "github.com/bitrise-tools/go-xcode/certificateutil",
 			"Rev": "a75a0ebdabce4b1f973d1a50c15aa4be02b75145"
 		},
@@ -82,10 +77,6 @@
 		{
 			"ImportPath": "github.com/fullsailor/pkcs7",
 			"Rev": "a009d8d7de53d9503c797cb8ec66fa3b21eed209"
-		},
-		{
-			"ImportPath": "github.com/hashicorp/go-version",
-			"Rev": "fc61389e27c71d120f87031ca8c88a3428f372dd"
 		},
 		{
 			"ImportPath": "github.com/pkg/errors",

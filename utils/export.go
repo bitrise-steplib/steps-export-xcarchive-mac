@@ -76,3 +76,25 @@ func ExportOutputDirAsZip(sourceDirPth, destinationPth, envKey string) error {
 
 	return ExportOutputFile(tmpZipFilePth, destinationPth, envKey)
 }
+
+// ExportAppFromArchive ...
+func ExportAppFromArchive(archivePath, destinationPath, envKey string) error {
+	appPattern := filepath.Join(archivePath, "Products/Applications/*.app")
+	pths, err := filepath.Glob(appPattern)
+	if err != nil {
+		return fmt.Errorf("failed to execute pattern, error: %s", err)
+	}
+
+	sourcePath := ""
+	if len(pths) > 0 {
+		sourcePath = pths[0]
+	} else {
+		return fmt.Errorf("failed to find main app, using pattern: %s", appPattern)
+	}
+
+	if err := ExportOutputDirAsZip(sourcePath, destinationPath, envKey); err != nil {
+		return fmt.Errorf("failed to export %s, error: %s", envKey, err)
+	}
+
+	return nil
+}

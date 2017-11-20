@@ -12,7 +12,7 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/steps-xcode-archive/utils"
+	"github.com/bitrise-steplib/steps-export-xcarchive-mac/utils"
 	"github.com/bitrise-tools/go-xcode/certificateutil"
 	"github.com/bitrise-tools/go-xcode/export"
 	"github.com/bitrise-tools/go-xcode/exportoptions"
@@ -161,38 +161,6 @@ func printProfileInfo(info profileutil.ProvisioningProfileInfoModel, installedCe
 	}
 }
 
-// func printCodesignGroup(group export.SelectableCodeSignGroup) {
-// 	fmt.Printf("development team: %s (%s)\n", group.Certificate.TeamName, group.Certificate.TeamID)
-// 	fmt.Printf("codesign identity: %s [%s]\n", group.Certificate.CommonName, group.Certificate.Serial)
-// 	idx := -1
-// 	for bundleID, profile := range group.BundleIDProfileMap {
-// 		idx++
-// 		if idx == 0 {
-// 			fmt.Printf("provisioning profiles: %s -> %s\n", profile.Name, bundleID)
-// 		} else {
-// 			fmt.Printf("%s%s -> %s\n", strings.Repeat(" ", len("provisioning profiles: ")), profile.Name, bundleID)
-// 		}
-// 	}
-// }
-
-// func printCodesignGroupMac(group export.SelectableCodeSignGroup) {
-// 	fmt.Printf("development team: %s (%s)\n", group.Certificate.TeamName, group.Certificate.TeamID)
-// 	fmt.Printf("codesign identity: %s [%s]\n", group.Certificate.CommonName, group.Certificate.Serial)
-// 	if group.InstallerCertificate.CommonName != "" {
-// 		fmt.Printf("installer codesign identity: %s [%s]\n", group.InstallerCertificate.CommonName, group.InstallerCertificate.Serial)
-// 	}
-// 	fmt.Printf("codesign identity: %s [%s]\n", group.Certificate.CommonName, group.Certificate.Serial)
-// 	idx := -1
-// 	for bundleID, profile := range group.BundleIDProfileMap {
-// 		idx++
-// 		if idx == 0 {
-// 			fmt.Printf("provisioning profiles: %s -> %s\n", profile.Name, bundleID)
-// 		} else {
-// 			fmt.Printf("%s%s -> %s\n", strings.Repeat(" ", len("provisioning profiles: ")), profile.Name, bundleID)
-// 		}
-// 	}
-// }
-
 func fail(format string, v ...interface{}) {
 	log.Errorf(format, v...)
 	os.Exit(1)
@@ -229,34 +197,10 @@ func main() {
 	archiveExt := filepath.Ext(configs.ArchivePath)
 	archiveName := filepath.Base(configs.ArchivePath)
 	archiveName = strings.TrimSuffix(archiveName, archiveExt)
-
 	appPath := filepath.Join(configs.DeployDir, archiveName+".app")
 	pkgPath := filepath.Join(configs.DeployDir, archiveName+".pkg")
 	exportOptionsPath := filepath.Join(configs.DeployDir, "export_options.plist")
-
-	if configs.ExportMethod == "none" {
-		log.Infof("Exporting app without re-sign...")
-
-		appPattern := filepath.Join(configs.ArchivePath, "Products/Applications/*.app")
-		pths, err := filepath.Glob(appPattern)
-		if err != nil {
-			fail("Failed to execute pattern, error: ", err)
-		}
-
-		sourcePath := ""
-		if len(pths) > 0 {
-			sourcePath = pths[0]
-		} else {
-			fail("Failed to find main app, using pattern: %s", appPattern)
-		}
-
-		if err := utils.ExportOutputDirAsZip(sourcePath, appPath, bitriseAppPathEnvKey); err != nil {
-			fail("Failed to export %s, error: %s", bitriseAppPathEnvKey, err)
-		}
-
-		log.Donef("The app path is now available in the Environment Variable: %s (value: %s)", bitriseAppPathEnvKey, appPath)
-		return
-	}
+	ideDistributionLogsZipPath := filepath.Join(configs.DeployDir, "xcodebuild.xcdistributionlogs.zip")
 
 	exportMethod, err := exportoptions.ParseMethod(configs.ExportMethod)
 	if err != nil {
@@ -269,19 +213,12 @@ func main() {
 	}
 	log.Printf("- xcodebuildVersion: %s (%s)", xcodebuildVersion.Version, xcodebuildVersion.BuildVersion)
 
-	if xcodebuildVersion.MajorVersion >= 9 && configs.UseLegacyExport == "yes" {
-		fail("Legacy export method (using '-exportFormat ipa' flag) is not supported from Xcode version 9")
-	}
-
-	// Validation CustomExportOptionsPlistContent
 	customExportOptionsPlistContent := strings.TrimSpace(configs.CustomExportOptionsPlistContent)
 	if customExportOptionsPlistContent != configs.CustomExportOptionsPlistContent {
 		fmt.Println()
 		log.Warnf("CustomExportOptionsPlistContent is stripped to remove spaces and new lines:")
 		log.Printf(customExportOptionsPlistContent)
 	}
-
-	ideDistributionLogsZipPath := filepath.Join(configs.DeployDir, "xcodebuild.xcdistributionlogs.zip")
 
 	envsToUnset := []string{"GEM_HOME", "GEM_PATH", "RUBYLIB", "RUBYOPT", "BUNDLE_BIN_PATH", "_ORIGINAL_GEM_PATH", "BUNDLE_GEMFILE"}
 	for _, key := range envsToUnset {
@@ -295,255 +232,285 @@ func main() {
 		fail("Failed to parse archive, error: %s", err)
 	}
 
-	if configs.UseLegacyExport == "yes" {
-		log.Infof("Using legacy export method...")
+	// do a simple export if method set to none
+	{
+		if configs.ExportMethod == "none" {
+			log.Infof("Exporting app without re-sign...")
 
-		provisioningProfileName := ""
-		if configs.LegacyExportProvisioningProfileName != "" {
-			log.Printf("Using provisioning profile: %s", configs.LegacyExportProvisioningProfileName)
-
-			provisioningProfileName = configs.LegacyExportProvisioningProfileName
-		} else {
-			log.Printf("Using embedded provisioning profile")
-
-			provisioningProfileName = archive.Application.ProvisioningProfile.Name
-			log.Printf("embedded profile name: %s", provisioningProfileName)
-		}
-
-		exportingApp := true
-		if configs.LegacyExportOutputFormat == "pkg" {
-			exportingApp = false
-		}
-
-		legacyExportCmd := xcodebuild.NewLegacyExportCommand()
-		legacyExportCmd.SetExportFormat(configs.LegacyExportOutputFormat)
-
-		if exportingApp {
-			legacyExportCmd.SetExportPath(appPath)
-		} else {
-			legacyExportCmd.SetExportPath(pkgPath)
-		}
-
-		legacyExportCmd.SetArchivePath(configs.ArchivePath)
-		legacyExportCmd.SetExportProvisioningProfileName(provisioningProfileName)
-
-		log.Donef("$ %s", legacyExportCmd.PrintableCmd())
-		fmt.Println()
-
-		if err := legacyExportCmd.Run(); err != nil {
-			fail("Export failed, error: %s", err)
-		}
-
-		if exportingApp {
-			if err := utils.ExportOutputFile(appPath, appPath, bitriseAppPathEnvKey); err != nil {
-				fail("Failed to export %s, error: %s", bitriseAppPathEnvKey, err)
+			if err := utils.ExportAppFromArchive(configs.ArchivePath, configs.DeployDir, bitriseAppPathEnvKey); err != nil {
+				fail("Failed to archive app, error: %s", err)
 			}
 
-			log.Donef("The app path is now available in the Environment Variable: %s (value: %s)", bitriseAppPathEnvKey, appPath)
-		} else {
-			if err := utils.ExportOutputFile(pkgPath, pkgPath, bitrisePKGPathEnvKey); err != nil {
-				fail("Failed to export %s, error: %s", bitrisePKGPathEnvKey, err)
-			}
-
-			log.Donef("The pkg path is now available in the Environment Variable: %s (value: %s)", bitrisePKGPathEnvKey, appPath)
-		}
-	} else {
-		log.Infof("Exporting with export options...")
-
-		if customExportOptionsPlistContent != "" {
-			log.Printf("custom export options content provided:")
-			fmt.Println(customExportOptionsPlistContent)
-
-			if err := fileutil.WriteStringToFile(exportOptionsPath, customExportOptionsPlistContent); err != nil {
-				fail("Failed to write export options to file, error: %s", err)
-			}
-		} else {
-			log.Printf("Generating export options")
-
-			if xcodebuildVersion.MajorVersion >= 9 {
-				log.Printf("xcode major version > 9, generating provisioningProfiles node")
-
-				installedCertificates, err := certificateutil.InstalledCodesigningCertificateInfos()
-				if err != nil {
-					fail("Failed to get installed certificates, error: %s", err)
-				}
-
-				fmt.Println()
-				log.Printf("Installed Codesign Identities")
-				for idx, certificate := range installedCertificates {
-					printCertificateInfo(certificate)
-					if idx < len(installedCertificates)-1 {
-						fmt.Println()
-					}
-				}
-
-				installedProfiles, err := profileutil.InstalledProvisioningProfileInfos(profileutil.ProfileTypeMacOs)
-				if err != nil {
-					fail("Failed to get installed provisioning profiles, error: %s", err)
-				}
-
-				fmt.Println()
-				log.Printf("Installed Provisioning Profiles")
-				for idx, profile := range installedProfiles {
-					printProfileInfo(profile, installedCertificates)
-					if idx < len(installedProfiles)-1 {
-						fmt.Println()
-					}
-				}
-
-				bundleIDEntitlementsMap := archive.BundleIDEntitlementsMap()
-				bundleIDs := []string{}
-				for bundleID := range bundleIDEntitlementsMap {
-					bundleIDs = append(bundleIDs, bundleID)
-				}
-
-				fmt.Println()
-				log.Printf("Target Bundle ID - Entitlements map")
-				idx := -1
-				for bundleID, entitlements := range bundleIDEntitlementsMap {
-					idx++
-					entitlementKeys := []string{}
-					for key := range entitlements {
-						entitlementKeys = append(entitlementKeys, key)
-					}
-					log.Printf("%s: [%s]", bundleID, strings.Join(entitlementKeys, " "))
-				}
-
-				codeSignGroups := export.CreateSelectableCodeSignGroups(installedCertificates, installedProfiles, bundleIDs)
-
-				if len(codeSignGroups) == 0 {
-					log.Errorf("Failed to find code singing groups for specified export method (%s)", exportMethod)
-				}
-
-				codeSignGroups = export.FilterSelectableCodeSignGroups(codeSignGroups,
-					export.CreateEntitlementsSelectableCodeSignGroupFilter(bundleIDEntitlementsMap),
-					export.CreateExportMethodSelectableCodeSignGroupFilter(exportMethod),
-				)
-
-				installedMacAppStoreCertificates, err := certificateutil.InstalledMacAppStoreCertificateInfos()
-				if err != nil {
-					log.Errorf("Failed to read installed Installer certificates, error: %s", err)
-				}
-
-				installedMacAppStoreCertificates = certificateutil.FilterCertificateInfoModelsByFilterFunc(installedMacAppStoreCertificates, func(cert certificateutil.CertificateInfoModel) bool {
-					return strings.Contains(cert.CommonName, "Installer")
-				})
-
-				// DEBUG
-				if configs.ExportMethod != "app-store" {
-					installedMacAppStoreCertificates = installedCertificates
-				}
-				// DEBUG
-
-				var macCodeSignGroup *export.MacCodeSignGroup
-				macCodeSignGroups := export.CreateMacCodeSignGroup(codeSignGroups, installedMacAppStoreCertificates, exportMethod)
-				if len(macCodeSignGroups) == 0 {
-					log.Errorf("Can not create macos codesiging groups for the project")
-				} else if len(macCodeSignGroups) > 1 {
-					log.Warnf("Multiple matching  codesiging groups found for the project, using first...")
-					macCodeSignGroup = &(macCodeSignGroups[0])
-				} else {
-					macCodeSignGroup = &(macCodeSignGroups[0])
-				}
-
-				exportProfileMapping := map[string]string{}
-				if macCodeSignGroup != nil {
-					for bundleID, profileInfo := range macCodeSignGroup.BundleIDProfileMap {
-						exportProfileMapping[bundleID] = profileInfo.Name
-					}
-				}
-
-				var exportOpts exportoptions.ExportOptions
-				if exportMethod == exportoptions.MethodAppStore {
-					options := exportoptions.NewAppStoreOptions()
-
-					if macCodeSignGroup != nil {
-						options.BundleIDProvisioningProfileMapping = exportProfileMapping
-						options.SigningCertificate = macCodeSignGroup.Certificate.CommonName
-						options.InstallerSigningCertificate = macCodeSignGroup.InstallerCertificate.CommonName
-					}
-
-					exportOpts = options
-				} else {
-					options := exportoptions.NewNonAppStoreOptions(exportMethod)
-
-					if macCodeSignGroup != nil {
-						options.BundleIDProvisioningProfileMapping = exportProfileMapping
-						options.SigningCertificate = macCodeSignGroup.Certificate.CommonName
-					}
-
-					exportOpts = options
-				}
-
-				log.Printf("generated export options content:")
-				fmt.Println()
-				fmt.Println(exportOpts.String())
-
-				if err = exportOpts.WriteToFile(exportOptionsPath); err != nil {
-					fail("Failed to write export options to file, error: %s", err)
-				}
-			}
-		}
-
-		fmt.Println()
-
-		tmpDir, err := pathutil.NormalizedOSTempDirPath("__export__")
-		if err != nil {
-			fail("Failed to create tmp dir, error: %s", err)
-		}
-
-		exportCmd := xcodebuild.NewExportCommand()
-		exportCmd.SetArchivePath(configs.ArchivePath)
-		exportCmd.SetExportDir(tmpDir)
-		exportCmd.SetExportOptionsPlist(exportOptionsPath)
-
-		log.Donef("$ %s", exportCmd.PrintableCmd())
-		fmt.Println()
-
-		if xcodebuildOut, err := exportCmd.RunAndReturnOutput(); err != nil {
-			// xcdistributionlogs
-			if logsDirPth, err := findIDEDistrubutionLogsPath(xcodebuildOut); err != nil {
-				log.Warnf("Failed to find xcdistributionlogs, error: %s", err)
-			} else if err := utils.ExportOutputDirAsZip(logsDirPth, ideDistributionLogsZipPath, bitriseIDEDistributionLogsPthEnvKey); err != nil {
-				log.Warnf("Failed to export %s, error: %s", bitriseIDEDistributionLogsPthEnvKey, err)
-			} else {
-				log.Warnf(`If you can't find the reason of the error in the log, please check the xcdistributionlogs
-The logs directory is stored in $BITRISE_DEPLOY_DIR, and its full path
-is available in the $BITRISE_IDEDISTRIBUTION_LOGS_PATH environment variable`)
-			}
-
-			fail("Export failed, error: %s", err)
-		}
-
-		pattern := filepath.Join(tmpDir, "*.app")
-		apps, err := filepath.Glob(pattern)
-		if err != nil {
-			fail("Failed to find app, with pattern: %s, error: %s", pattern, err)
-		}
-
-		if len(apps) > 0 {
-			if err := utils.ExportOutputDirAsZip(apps[0], appPath, bitriseAppPathEnvKey); err != nil {
-				fail("Failed to export %s, error: %s", bitriseAppPathEnvKey, err)
-			}
-
-			log.Donef("The app path is now available in the Environment Variable: %s (value: %s)", bitriseAppPathEnvKey, appPath)
+			log.Donef("The app path is now available in the Environment Variable: %s", bitriseAppPathEnvKey)
 			return
 		}
+	}
 
-		pattern = filepath.Join(tmpDir, "*.pkg")
-		pkgs, err := filepath.Glob(pattern)
-		if err != nil {
-			fail("Failed to find pkg, with pattern: %s, error: %s", pattern, err)
-		}
+	// legacy export
+	{
+		if configs.UseLegacyExport == "yes" {
+			log.Infof("Using legacy export method...")
 
-		if len(pkgs) > 0 {
-			if err := utils.ExportOutputFile(pkgs[0], pkgPath, bitrisePKGPathEnvKey); err != nil {
-				fail("Failed to export %s, error: %s", bitrisePKGPathEnvKey, err)
+			if xcodebuildVersion.MajorVersion >= 9 {
+				fail("Legacy export method (using '-exportFormat ipa' flag) is not supported from Xcode version 9")
 			}
 
-			log.Donef("The pkg path is now available in the Environment Variable: %s (value: %s)", bitrisePKGPathEnvKey, appPath)
-		} else {
-			fail("No app nor pkg output generated")
+			provisioningProfileName := ""
+			if configs.LegacyExportProvisioningProfileName != "" {
+				log.Printf("Using provisioning profile: %s", configs.LegacyExportProvisioningProfileName)
+
+				provisioningProfileName = configs.LegacyExportProvisioningProfileName
+			} else {
+				log.Printf("Using embedded provisioning profile")
+
+				provisioningProfileName = archive.Application.ProvisioningProfile.Name
+				log.Printf("embedded profile name: %s", provisioningProfileName)
+			}
+
+			exportingApp := true
+			if configs.LegacyExportOutputFormat == "pkg" {
+				exportingApp = false
+			}
+
+			legacyExportCmd := xcodebuild.NewLegacyExportCommand()
+			legacyExportCmd.SetExportFormat(configs.LegacyExportOutputFormat)
+
+			if exportingApp {
+				legacyExportCmd.SetExportPath(appPath)
+			} else {
+				legacyExportCmd.SetExportPath(pkgPath)
+			}
+
+			legacyExportCmd.SetArchivePath(configs.ArchivePath)
+			legacyExportCmd.SetExportProvisioningProfileName(provisioningProfileName)
+
+			log.Donef("$ %s", legacyExportCmd.PrintableCmd())
+			fmt.Println()
+
+			if err := legacyExportCmd.Run(); err != nil {
+				fail("Export failed, error: %s", err)
+			}
+
+			if exportingApp {
+				if err := utils.ExportOutputFile(appPath, appPath, bitriseAppPathEnvKey); err != nil {
+					fail("Failed to export %s, error: %s", bitriseAppPathEnvKey, err)
+				}
+
+				log.Donef("The app path is now available in the Environment Variable: %s (value: %s)", bitriseAppPathEnvKey, appPath)
+			} else {
+				if err := utils.ExportOutputFile(pkgPath, pkgPath, bitrisePKGPathEnvKey); err != nil {
+					fail("Failed to export %s, error: %s", bitrisePKGPathEnvKey, err)
+				}
+
+				log.Donef("The pkg path is now available in the Environment Variable: %s (value: %s)", bitrisePKGPathEnvKey, appPath)
+			}
+
+			return
 		}
+	}
+
+	log.Infof("Exporting with export options...")
+
+	exportOptionsPlistContent := ""
+
+	if customExportOptionsPlistContent != "" {
+		log.Printf("Custom export options content provided:")
+		fmt.Println(customExportOptionsPlistContent)
+
+		exportOptionsPlistContent = customExportOptionsPlistContent
+	}
+
+	if exportOptionsPlistContent == "" {
+		log.Printf("Generating export options")
+
+		if xcodebuildVersion.MajorVersion >= 9 {
+			log.Printf("xcode major version > 9, generating provisioningProfiles node")
+
+			installedCertificates, err := certificateutil.InstalledCodesigningCertificateInfos()
+			if err != nil {
+				fail("Failed to get installed certificates, error: %s", err)
+			}
+
+			fmt.Println()
+			log.Printf("Installed Codesign Identities")
+			for idx, certificate := range installedCertificates {
+				printCertificateInfo(certificate)
+				if idx < len(installedCertificates)-1 {
+					fmt.Println()
+				}
+			}
+
+			installedProfiles, err := profileutil.InstalledProvisioningProfileInfos(profileutil.ProfileTypeMacOs)
+			if err != nil {
+				fail("Failed to get installed provisioning profiles, error: %s", err)
+			}
+
+			fmt.Println()
+			log.Printf("Installed Provisioning Profiles")
+			for idx, profile := range installedProfiles {
+				printProfileInfo(profile, installedCertificates)
+				if idx < len(installedProfiles)-1 {
+					fmt.Println()
+				}
+			}
+
+			bundleIDEntitlementsMap := archive.BundleIDEntitlementsMap()
+			bundleIDs := []string{}
+			for bundleID := range bundleIDEntitlementsMap {
+				bundleIDs = append(bundleIDs, bundleID)
+			}
+
+			fmt.Println()
+			log.Printf("Target Bundle ID - Entitlements map")
+			idx := -1
+			for bundleID, entitlements := range bundleIDEntitlementsMap {
+				idx++
+				entitlementKeys := []string{}
+				for key := range entitlements {
+					entitlementKeys = append(entitlementKeys, key)
+				}
+				log.Printf("%s: [%s]", bundleID, strings.Join(entitlementKeys, " "))
+			}
+
+			codeSignGroups := export.CreateSelectableCodeSignGroups(installedCertificates, installedProfiles, bundleIDs)
+
+			if len(codeSignGroups) == 0 {
+				log.Errorf("Failed to find code singing groups for specified export method (%s)", exportMethod)
+			}
+
+			codeSignGroups = export.FilterSelectableCodeSignGroups(codeSignGroups,
+				export.CreateEntitlementsSelectableCodeSignGroupFilter(bundleIDEntitlementsMap),
+				export.CreateExportMethodSelectableCodeSignGroupFilter(exportMethod),
+			)
+
+			installedMacAppStoreCertificates, err := certificateutil.InstalledMacAppStoreCertificateInfos()
+			if err != nil {
+				log.Errorf("Failed to read installed Installer certificates, error: %s", err)
+			}
+
+			installedMacAppStoreCertificates = certificateutil.FilterCertificateInfoModelsByFilterFunc(installedMacAppStoreCertificates, func(cert certificateutil.CertificateInfoModel) bool {
+				return strings.Contains(cert.CommonName, "Installer")
+			})
+
+			// DEBUG
+			if configs.ExportMethod != "app-store" {
+				installedMacAppStoreCertificates = installedCertificates
+			}
+			// DEBUG
+
+			var macCodeSignGroup *export.MacCodeSignGroup
+			macCodeSignGroups := export.CreateMacCodeSignGroup(codeSignGroups, installedMacAppStoreCertificates, exportMethod)
+			if len(macCodeSignGroups) == 0 {
+				log.Errorf("Can not create macos codesiging groups for the project")
+			} else if len(macCodeSignGroups) > 1 {
+				log.Warnf("Multiple matching  codesiging groups found for the project, using first...")
+				macCodeSignGroup = &(macCodeSignGroups[0])
+			} else {
+				macCodeSignGroup = &(macCodeSignGroups[0])
+			}
+
+			exportProfileMapping := map[string]string{}
+			if macCodeSignGroup != nil {
+				for bundleID, profileInfo := range macCodeSignGroup.BundleIDProfileMap {
+					exportProfileMapping[bundleID] = profileInfo.Name
+				}
+			}
+
+			var exportOpts exportoptions.ExportOptions
+			if exportMethod == exportoptions.MethodAppStore {
+				options := exportoptions.NewAppStoreOptions()
+
+				if macCodeSignGroup != nil {
+					options.BundleIDProvisioningProfileMapping = exportProfileMapping
+					options.SigningCertificate = macCodeSignGroup.Certificate.CommonName
+					options.InstallerSigningCertificate = macCodeSignGroup.InstallerCertificate.CommonName
+				}
+
+				exportOpts = options
+			} else {
+				options := exportoptions.NewNonAppStoreOptions(exportMethod)
+
+				if macCodeSignGroup != nil {
+					options.BundleIDProvisioningProfileMapping = exportProfileMapping
+					options.SigningCertificate = macCodeSignGroup.Certificate.CommonName
+				}
+
+				exportOpts = options
+			}
+
+			log.Printf("generated export options content:")
+			fmt.Println()
+			fmt.Println(exportOpts.String())
+
+			exportOptionsPlistContent, err = exportOpts.String()
+			if err != nil {
+				fail("Failed to get exportOptions, error: %s", err)
+			}
+		}
+	}
+
+	if err := fileutil.WriteStringToFile(exportOptionsPath, exportOptionsPlistContent); err != nil {
+		fail("Failed to write export options to file, error: %s", err)
+	}
+
+	fmt.Println()
+
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("__export__")
+	if err != nil {
+		fail("Failed to create tmp dir, error: %s", err)
+	}
+
+	exportCmd := xcodebuild.NewExportCommand()
+	exportCmd.SetArchivePath(configs.ArchivePath)
+	exportCmd.SetExportDir(tmpDir)
+	exportCmd.SetExportOptionsPlist(exportOptionsPath)
+
+	log.Donef("$ %s", exportCmd.PrintableCmd())
+	fmt.Println()
+
+	if xcodebuildOut, err := exportCmd.RunAndReturnOutput(); err != nil {
+		// xcdistributionlogs
+		if logsDirPth, err := findIDEDistrubutionLogsPath(xcodebuildOut); err != nil {
+			log.Warnf("Failed to find xcdistributionlogs, error: %s", err)
+		} else if err := utils.ExportOutputDirAsZip(logsDirPth, ideDistributionLogsZipPath, bitriseIDEDistributionLogsPthEnvKey); err != nil {
+			log.Warnf("Failed to export %s, error: %s", bitriseIDEDistributionLogsPthEnvKey, err)
+		} else {
+			log.Warnf(`If you can't find the reason of the error in the log, please check the xcdistributionlogs
+The logs directory is stored in $BITRISE_DEPLOY_DIR, and its full path
+is available in the $BITRISE_IDEDISTRIBUTION_LOGS_PATH environment variable`)
+		}
+
+		fail("Export failed, error: %s", err)
+	}
+
+	pattern := filepath.Join(tmpDir, "*.app")
+	apps, err := filepath.Glob(pattern)
+	if err != nil {
+		fail("Failed to find app, with pattern: %s, error: %s", pattern, err)
+	}
+
+	if len(apps) > 0 {
+		if err := utils.ExportOutputDirAsZip(apps[0], appPath, bitriseAppPathEnvKey); err != nil {
+			fail("Failed to export %s, error: %s", bitriseAppPathEnvKey, err)
+		}
+
+		log.Donef("The app path is now available in the Environment Variable: %s (value: %s)", bitriseAppPathEnvKey, appPath)
+		return
+	}
+
+	pattern = filepath.Join(tmpDir, "*.pkg")
+	pkgs, err := filepath.Glob(pattern)
+	if err != nil {
+		fail("Failed to find pkg, with pattern: %s, error: %s", pattern, err)
+	}
+
+	if len(pkgs) > 0 {
+		if err := utils.ExportOutputFile(pkgs[0], pkgPath, bitrisePKGPathEnvKey); err != nil {
+			fail("Failed to export %s, error: %s", bitrisePKGPathEnvKey, err)
+		}
+
+		log.Donef("The pkg path is now available in the Environment Variable: %s (value: %s)", bitrisePKGPathEnvKey, appPath)
+	} else {
+		fail("No app nor pkg output generated")
 	}
 }
