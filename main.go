@@ -118,52 +118,6 @@ func (configs ConfigsModel) validate() error {
 	return nil
 }
 
-func printCertificateInfo(info certificateutil.CertificateInfoModel) {
-	log.Printf(info.CommonName)
-	log.Printf("serial: %s", info.Serial)
-	log.Printf("team: %s (%s)", info.TeamName, info.TeamID)
-	log.Printf("expire: %s", info.EndDate)
-
-	if err := info.CheckValidity(); err != nil {
-		log.Errorf("[X] %s", err)
-	}
-}
-
-func printProfileInfo(info profileutil.ProvisioningProfileInfoModel, installedCertificates []certificateutil.CertificateInfoModel) {
-	log.Printf("%s (%s)", info.Name, info.UUID)
-	log.Printf("exportType: %s", string(info.ExportType))
-	log.Printf("team: %s (%s)", info.TeamName, info.TeamID)
-	log.Printf("bundleID: %s", info.BundleID)
-
-	log.Printf("certificates:")
-	for _, certificateInfo := range info.DeveloperCertificates {
-		log.Printf("- %s", certificateInfo.CommonName)
-		log.Printf("  serial: %s", certificateInfo.Serial)
-		log.Printf("  teamID: %s", certificateInfo.TeamID)
-	}
-
-	if len(info.ProvisionedDevices) > 0 {
-		log.Printf("devices:")
-		for _, deviceID := range info.ProvisionedDevices {
-			log.Printf("- %s", deviceID)
-		}
-	}
-
-	log.Printf("expire: %s", info.ExpirationDate)
-
-	if !info.HasInstalledCertificate(installedCertificates) {
-		log.Errorf("[X] none of the profile's certificates are installed")
-	}
-
-	if err := info.CheckValidity(); err != nil {
-		log.Errorf("[X] %s", err)
-	}
-
-	if info.IsXcodeManaged() {
-		log.Warnf("[!] xcode managed profile")
-	}
-}
-
 func fail(format string, v ...interface{}) {
 	log.Errorf(format, v...)
 	os.Exit(1)
@@ -267,6 +221,10 @@ func main() {
 				provisioningProfileName = configs.LegacyExportProvisioningProfileName
 			} else {
 				log.Printf("Using embedded provisioning profile")
+
+				if archive.Application.ProvisioningProfile == nil {
+					fail("No embedded.provisionprofile found nor Provisioning Profile name to use by export specified")
+				}
 
 				provisioningProfileName = archive.Application.ProvisioningProfile.Name
 				log.Printf("embedded profile name: %s", provisioningProfileName)
