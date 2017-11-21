@@ -336,6 +336,7 @@ func main() {
 				fail("Failed to get installed certificates, error: %s", err)
 			}
 
+			log.Debugf("\n")
 			log.Debugf("Installed certificates:")
 			for _, certInfo := range installedCertificates {
 				log.Debugf(certInfo.String())
@@ -348,8 +349,9 @@ func main() {
 					log.Errorf("Failed to read installed Installer certificates, error: %s", err)
 				}
 
+				log.Debugf("\n")
 				log.Debugf("Installed Installer certificates:")
-				for _, certInfo := range installedCertificates {
+				for _, certInfo := range installedInstallerCertificates {
 					log.Debugf(certInfo.String())
 				}
 			}
@@ -359,7 +361,7 @@ func main() {
 				fail("Failed to get installed provisioning profiles, error: %s", err)
 			}
 
-			fmt.Println()
+			log.Debugf("\n")
 			log.Debugf("Installed profiles:")
 			for _, profileInfo := range installedProfiles {
 				log.Debugf(profileInfo.String(installedCertificates...))
