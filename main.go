@@ -333,7 +333,7 @@ func main() {
 				bundleIDs = append(bundleIDs, bundleID)
 			}
 
-			codesign, err := codesigngroup.New(bundleIDs, profileutil.ProfileTypeMacOs)
+			codesign, err := codesigngroup.New(bundleIDs, profileutil.ProfileTypeMacOs, exportMethod)
 			if err != nil {
 				fail("Failed to get codesign groups, error: %s", err)
 			}
@@ -390,7 +390,7 @@ func main() {
 			// DEBUG
 
 			var macCodeSignGroup *export.MacCodeSignGroup
-			macCodeSignGroups := export.CreateMacCodeSignGroup(codesign.Groups, installedMacAppStoreCertificates, exportMethod)
+			macCodeSignGroups := codesign.GetCodesignGroups(installedMacAppStoreCertificates)
 			if len(macCodeSignGroups) == 0 {
 				log.Errorf("Can not create macos codesiging groups for the project")
 			} else if len(macCodeSignGroups) > 1 {

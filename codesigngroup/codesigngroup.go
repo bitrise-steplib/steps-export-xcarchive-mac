@@ -12,6 +12,8 @@ import (
 type GroupModel struct {
 	Groups              []export.SelectableCodeSignGroup
 	InstalledIdentities InstalledIdentitiesModel
+	ExportMethod        exportoptions.Method
+	ProjectType         profileutil.ProfileType
 }
 
 // InstalledIdentitiesModel ...
@@ -26,7 +28,7 @@ type Filter struct {
 }
 
 // New ...
-func New(bundleIDs []string, profileType profileutil.ProfileType) (*GroupModel, error) {
+func New(bundleIDs []string, profileType profileutil.ProfileType, method exportoptions.Method) (*GroupModel, error) {
 	installedCertificates, err := certificateutil.InstalledCodesigningCertificateInfos()
 	if err != nil {
 		return nil, err
@@ -43,12 +45,23 @@ func New(bundleIDs []string, profileType profileutil.ProfileType) (*GroupModel, 
 			Certificates: installedCertificates,
 			Profiles:     installedProfiles,
 		},
+		ExportMethod: method,
+		ProjectType:  profileType,
 	}, nil
 }
 
 // Filter ...
 func (groupModel *GroupModel) Filter() *Filter {
 	return &Filter{model: groupModel}
+}
+
+// GetCodesignGroups ...
+func (groupModel *GroupModel) GetCodesignGroups(installedMacAppStoreCertificates []certificateutil.CertificateInfoModel) []export.MacCodeSignGroup {
+	if groupModel.ProjectType == profileutil.ProfileTypeMacOs {
+		return export.CreateMacCodeSignGroup(groupModel.Groups, installedMacAppStoreCertificates, groupModel.ExportMethod)
+	}
+
+	return nil
 }
 
 // ByMethod ...
