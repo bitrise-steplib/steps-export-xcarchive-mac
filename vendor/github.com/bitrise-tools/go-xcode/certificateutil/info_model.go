@@ -3,9 +3,12 @@ package certificateutil
 import (
 	"crypto/sha1"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/bitrise-io/go-utils/log"
 )
 
 // CertificateInfoModel ...
@@ -20,6 +23,31 @@ type CertificateInfoModel struct {
 	SHA1Fingerprint string
 
 	certificate x509.Certificate
+}
+
+// String ...
+func (info CertificateInfoModel) String() string {
+	printable := map[string]interface{}{}
+	printable["name"] = info.CommonName
+	printable["serial"] = info.Serial
+	printable["team"] = fmt.Sprintf("%s (%s)", info.TeamName, info.TeamID)
+	printable["expire"] = info.EndDate.String()
+
+	errors := []string{}
+	if err := info.CheckValidity(); err != nil {
+		errors = append(errors, err.Error())
+	}
+	if len(errors) > 0 {
+		printable["errors"] = errors
+	}
+
+	data, err := json.MarshalIndent(printable, "", "\t")
+	if err != nil {
+		log.Errorf("Failed to marshal: %v, error: %s", printable, err)
+		return ""
+	}
+
+	return string(data)
 }
 
 // CheckValidity ...
@@ -87,11 +115,16 @@ func InstalledCodesigningCertificateInfos() ([]CertificateInfoModel, error) {
 	return CertificateInfos(certificates), nil
 }
 
-// InstalledMacAppStoreCertificateInfos ...
-func InstalledMacAppStoreCertificateInfos() ([]CertificateInfoModel, error) {
+// InstalledInstallerCertificateInfos ...
+func InstalledInstallerCertificateInfos() ([]CertificateInfoModel, error) {
 	certificates, err := InstalledMacAppStoreCertificates()
 	if err != nil {
 		return nil, err
 	}
-	return CertificateInfos(certificates), nil
+
+	installerCertificates := FilterCertificateInfoModelsByFilterFunc(CertificateInfos(certificates), func(cert CertificateInfoModel) bool {
+		return strings.Contains(cert.CommonName, "Installer")
+	})
+
+	return installerCertificates, nil
 }
