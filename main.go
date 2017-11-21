@@ -12,6 +12,7 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-steplib/steps-export-xcarchive-mac/codesigngroup"
 	"github.com/bitrise-steplib/steps-export-xcarchive-mac/utils"
 	"github.com/bitrise-tools/go-xcode/certificateutil"
 	"github.com/bitrise-tools/go-xcode/export"
@@ -326,38 +327,33 @@ func main() {
 		if xcodebuildVersion.MajorVersion >= 9 {
 			log.Printf("xcode major version > 9, generating provisioningProfiles node")
 
-			installedCertificates, err := certificateutil.InstalledCodesigningCertificateInfos()
-			if err != nil {
-				fail("Failed to get installed certificates, error: %s", err)
-			}
-
-			fmt.Println()
-			log.Printf("Installed Codesign Identities")
-			for idx, certificate := range installedCertificates {
-				printCertificateInfo(certificate)
-				if idx < len(installedCertificates)-1 {
-					fmt.Println()
-				}
-			}
-
-			installedProfiles, err := profileutil.InstalledProvisioningProfileInfos(profileutil.ProfileTypeMacOs)
-			if err != nil {
-				fail("Failed to get installed provisioning profiles, error: %s", err)
-			}
-
-			fmt.Println()
-			log.Printf("Installed Provisioning Profiles")
-			for idx, profile := range installedProfiles {
-				printProfileInfo(profile, installedCertificates)
-				if idx < len(installedProfiles)-1 {
-					fmt.Println()
-				}
-			}
-
 			bundleIDEntitlementsMap := archive.BundleIDEntitlementsMap()
 			bundleIDs := []string{}
 			for bundleID := range bundleIDEntitlementsMap {
 				bundleIDs = append(bundleIDs, bundleID)
+			}
+
+			codesign, err := codesigngroup.New(bundleIDs, profileutil.ProfileTypeMacOs)
+			if err != nil {
+				fail("Failed to get codesign groups, error: %s", err)
+			}
+
+			fmt.Println()
+			log.Printf("Installed Codesign Identities")
+			for idx, certificate := range codesign.InstalledIdentities.Certificates {
+				printCertificateInfo(certificate)
+				if idx < len(codesign.InstalledIdentities.Certificates)-1 {
+					fmt.Println()
+				}
+			}
+
+			fmt.Println()
+			log.Printf("Installed Provisioning Profiles")
+			for idx, profile := range codesign.InstalledIdentities.Profiles {
+				printProfileInfo(profile, codesign.InstalledIdentities.Certificates)
+				if idx < len(codesign.InstalledIdentities.Profiles)-1 {
+					fmt.Println()
+				}
 			}
 
 			fmt.Println()
@@ -372,16 +368,11 @@ func main() {
 				log.Printf("%s: [%s]", bundleID, strings.Join(entitlementKeys, " "))
 			}
 
-			codeSignGroups := export.CreateSelectableCodeSignGroups(installedCertificates, installedProfiles, bundleIDs)
-
-			if len(codeSignGroups) == 0 {
+			if len(codesign.Groups) == 0 {
 				log.Errorf("Failed to find code singing groups for specified export method (%s)", exportMethod)
 			}
 
-			codeSignGroups = export.FilterSelectableCodeSignGroups(codeSignGroups,
-				export.CreateEntitlementsSelectableCodeSignGroupFilter(bundleIDEntitlementsMap),
-				export.CreateExportMethodSelectableCodeSignGroupFilter(exportMethod),
-			)
+			codesign.Filter().ByMethod(exportMethod).ByEntitlements(bundleIDEntitlementsMap)
 
 			installedMacAppStoreCertificates, err := certificateutil.InstalledMacAppStoreCertificateInfos()
 			if err != nil {
@@ -394,12 +385,12 @@ func main() {
 
 			// DEBUG
 			if configs.ExportMethod != "app-store" {
-				installedMacAppStoreCertificates = installedCertificates
+				installedMacAppStoreCertificates = codesign.InstalledIdentities.Certificates
 			}
 			// DEBUG
 
 			var macCodeSignGroup *export.MacCodeSignGroup
-			macCodeSignGroups := export.CreateMacCodeSignGroup(codeSignGroups, installedMacAppStoreCertificates, exportMethod)
+			macCodeSignGroups := export.CreateMacCodeSignGroup(codesign.Groups, installedMacAppStoreCertificates, exportMethod)
 			if len(macCodeSignGroups) == 0 {
 				log.Errorf("Can not create macos codesiging groups for the project")
 			} else if len(macCodeSignGroups) > 1 {
