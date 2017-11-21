@@ -57,14 +57,17 @@ workflows:
         title: Step Test - Export Options
         inputs:
         - export_method: app-store
+        - verbose_log: "yes"
     - path::./:
         title: Step Test - Export Options
         inputs:
         - export_method: developer-id
+        - verbose_log: "yes"
     - path::./:
         title: Step Test - Export Options
         inputs:
         - export_method: none
+        - verbose_log: "yes"
     - script:
         title: Output Test
         inputs:

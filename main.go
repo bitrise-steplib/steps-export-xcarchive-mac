@@ -42,7 +42,8 @@ type ConfigsModel struct {
 	LegacyExportProvisioningProfileName string
 	LegacyExportOutputFormat            string
 
-	DeployDir string
+	VerboseLog string
+	DeployDir  string
 }
 
 func createConfigsModelFromEnvs() ConfigsModel {
@@ -59,7 +60,8 @@ func createConfigsModelFromEnvs() ConfigsModel {
 		LegacyExportProvisioningProfileName: os.Getenv("legacy_export_provisioning_profile_name"),
 		LegacyExportOutputFormat:            os.Getenv("legacy_export_output_format"),
 
-		DeployDir: os.Getenv("BITRISE_DEPLOY_DIR"),
+		DeployDir:  os.Getenv("BITRISE_DEPLOY_DIR"),
+		VerboseLog: os.Getenv("verbose_log"),
 	}
 }
 
@@ -70,6 +72,7 @@ func (configs ConfigsModel) print() {
 	log.Printf("- UploadBitcode: %s", configs.UploadBitcode)
 	log.Printf("- CompileBitcode: %s", configs.CompileBitcode)
 	log.Printf("- TeamID: %s", configs.TeamID)
+	log.Printf("- VerboseLog: %s", configs.VerboseLog)
 
 	log.Infof("Experimental Configs:")
 	log.Printf("- UseLegacyExport: %s", configs.UseLegacyExport)
@@ -193,6 +196,8 @@ func main() {
 	if err := configs.validate(); err != nil {
 		fail("Issue with input: %s", err)
 	}
+
+	log.SetEnableDebugLog(configs.VerboseLog == "yes")
 
 	archiveExt := filepath.Ext(configs.ArchivePath)
 	archiveName := filepath.Base(configs.ArchivePath)
@@ -331,12 +336,21 @@ func main() {
 				fail("Failed to get installed certificates, error: %s", err)
 			}
 
-			fmt.Println()
-			log.Printf("Installed Codesign Identities")
-			for idx, certificate := range installedCertificates {
-				printCertificateInfo(certificate)
-				if idx < len(installedCertificates)-1 {
-					fmt.Println()
+			log.Debugf("Installed certificates:")
+			for _, certInfo := range installedCertificates {
+				log.Debugf(certInfo.String())
+			}
+
+			installedInstallerCertificates := []certificateutil.CertificateInfoModel{}
+			if exportMethod == exportoptions.MethodAppStore {
+				installedInstallerCertificates, err = certificateutil.InstalledInstallerCertificateInfos()
+				if err != nil {
+					log.Errorf("Failed to read installed Installer certificates, error: %s", err)
+				}
+
+				log.Debugf("Installed Installer certificates:")
+				for _, certInfo := range installedCertificates {
+					log.Debugf(certInfo.String())
 				}
 			}
 
@@ -346,12 +360,9 @@ func main() {
 			}
 
 			fmt.Println()
-			log.Printf("Installed Provisioning Profiles")
-			for idx, profile := range installedProfiles {
-				printProfileInfo(profile, installedCertificates)
-				if idx < len(installedProfiles)-1 {
-					fmt.Println()
-				}
+			log.Debugf("Installed profiles:")
+			for _, profileInfo := range installedProfiles {
+				log.Debugf(profileInfo.String(installedCertificates...))
 			}
 
 			bundleIDEntitlementsMap := archive.BundleIDEntitlementsMap()
@@ -372,6 +383,8 @@ func main() {
 				log.Printf("%s: [%s]", bundleID, strings.Join(entitlementKeys, " "))
 			}
 
+			fmt.Println()
+			log.Printf("Resolving CodeSignGroups...")
 			codeSignGroups := export.CreateSelectableCodeSignGroups(installedCertificates, installedProfiles, bundleIDs)
 
 			if len(codeSignGroups) == 0 {
@@ -383,9 +396,8 @@ func main() {
 				export.CreateExportMethodSelectableCodeSignGroupFilter(exportMethod),
 			)
 
-			installedInstallerCertificates, err := certificateutil.InstalledInstallerCertificateInfos()
-			if err != nil {
-				log.Errorf("Failed to read installed Installer certificates, error: %s", err)
+			for _, group := range codeSignGroups {
+				log.Debugf(group.String())
 			}
 
 			var macCodeSignGroup *export.MacCodeSignGroup
