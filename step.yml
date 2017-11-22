@@ -12,8 +12,9 @@ host_os_tags:
 project_type_tags:
   - macos
   - xamarin
+  - react-native
 type_tags:
-  - script
+  - utility
 is_requires_admin_user: true
 is_always_run: false
 is_skippable: false
