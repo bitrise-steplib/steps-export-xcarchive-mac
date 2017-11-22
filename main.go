@@ -294,6 +294,8 @@ func main() {
 				fail("Failed to get installed certificates, error: %s", err)
 			}
 
+			installedCertificates = certificateutil.FilterValidCertificateInfos(installedCertificates)
+
 			log.Debugf("\n")
 			log.Debugf("Installed certificates:")
 			for _, certInfo := range installedCertificates {
@@ -306,6 +308,8 @@ func main() {
 				if err != nil {
 					log.Errorf("Failed to read installed Installer certificates, error: %s", err)
 				}
+
+				installedInstallerCertificates = certificateutil.FilterValidCertificateInfos(installedInstallerCertificates)
 
 				log.Debugf("\n")
 				log.Debugf("Installed Installer certificates:")
