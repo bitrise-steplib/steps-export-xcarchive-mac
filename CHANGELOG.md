@@ -1,6 +1,10 @@
-## Changelog (Current version: 1.0.1)
+## Changelog (Current version: 1.0.2)
 
 -----------------
+
+### 1.0.2 (2017 Nov 22)
+
+* [1fa9523] Prepare for 1.0.2
 
 ### 1.0.1 (2017 Nov 22)
 
