@@ -1,6 +1,11 @@
-## Changelog (Current version: 0.9.2)
+## Changelog (Current version: 1.0.0)
 
 -----------------
+
+### 1.0.0 (2017 Nov 22)
+
+* [4e4aa17] Prepare for 1.0.0
+* [91a65b4] Update (#5)
 
 ### 0.9.2 (2016 Dec 20)
 
@@ -16,4 +21,4 @@
 
 -----------------
 
-Updated: 2016 Dec 20
+Updated: 2017 Nov 22
