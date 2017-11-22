@@ -1,6 +1,10 @@
-## Changelog (Current version: 1.0.0)
+## Changelog (Current version: 1.0.1)
 
 -----------------
+
+### 1.0.1 (2017 Nov 22)
+
+* [be610a5] Prepare for 1.0.1
 
 ### 1.0.0 (2017 Nov 22)
 
