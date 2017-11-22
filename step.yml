@@ -12,7 +12,6 @@ host_os_tags:
 project_type_tags:
   - macos
   - xamarin
-  - react-native
 type_tags:
   - utility
 is_requires_admin_user: true
