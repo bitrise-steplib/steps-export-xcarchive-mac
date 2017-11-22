@@ -40,10 +40,9 @@ inputs:
         Describes how Xcode should export the archive.
       value_options:
       - "app-store"
-      - "ad-hoc"
-      - "enterprise"
       - "development"
       - "developer-id"
+      - "none"
       is_required: true
   - upload_bitcode: "yes"
     opts:
@@ -119,6 +118,14 @@ inputs:
       - "app"
       - "pkg" 
       is_required: true  
+  - verbose_log: "yes"
+    opts:
+      title: "Enable verbose logging?"
+      description: Enable verbose logging?
+      is_required: true
+      value_options:
+      - "yes"
+      - "no"
 outputs:
   - BITRISE_APP_PATH:
     opts:

@@ -79,8 +79,6 @@ func (manifest Manifest) ToHash() map[string]string {
 const MethodKey = "method"
 
 const (
-	// MethodNone ...
-	MethodNone Method = "none"
 	// MethodAppStore ...
 	MethodAppStore Method = "app-store"
 	// MethodAdHoc ...
@@ -116,7 +114,7 @@ func ParseMethod(method string) (Method, error) {
 	case "developer-id":
 		return MethodDeveloperID, nil
 	default:
-		return MethodNone, fmt.Errorf("unkown method (%s)", method)
+		return Method(""), fmt.Errorf("unkown method (%s)", method)
 	}
 }
 
@@ -149,3 +147,15 @@ const UploadSymbolsKey = "uploadSymbols"
 
 // UploadSymbolsDefault ...
 const UploadSymbolsDefault = true
+
+// ProvisioningProfilesKey ...
+const ProvisioningProfilesKey = "provisioningProfiles"
+
+// SigningCertificateKey ...
+const SigningCertificateKey = "signingCertificate"
+
+// InstallerSigningCertificateKey ...
+const InstallerSigningCertificateKey = "installerSigningCertificate"
+
+// SigningStyleKey ...
+const SigningStyleKey = "signingStyle"
