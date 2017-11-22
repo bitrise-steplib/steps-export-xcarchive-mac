@@ -163,7 +163,7 @@ func main() {
 
 	xcodebuildVersion, err := utility.GetXcodeVersion()
 	if err != nil {
-		fail("Failed to determin xcode version, error: %s", err)
+		fail("Failed to determine xcode version, error: %s", err)
 	}
 	log.Printf("- xcodebuildVersion: %s (%s)", xcodebuildVersion.Version, xcodebuildVersion.BuildVersion)
 
@@ -340,7 +340,7 @@ func main() {
 				for key := range entitlements {
 					entitlementKeys = append(entitlementKeys, key)
 				}
-				log.Printf("%s: [%s]", bundleID, strings.Join(entitlementKeys, " "))
+				log.Printf("%s: %s", bundleID, entitlementKeys)
 			}
 
 			fmt.Println()
