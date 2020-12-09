@@ -12,14 +12,14 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-xcode/certificateutil"
+	"github.com/bitrise-io/go-xcode/export"
+	"github.com/bitrise-io/go-xcode/exportoptions"
+	"github.com/bitrise-io/go-xcode/profileutil"
+	"github.com/bitrise-io/go-xcode/utility"
+	"github.com/bitrise-io/go-xcode/xcarchive"
+	"github.com/bitrise-io/go-xcode/xcodebuild"
 	"github.com/bitrise-steplib/steps-export-xcarchive-mac/utils"
-	"github.com/bitrise-tools/go-xcode/certificateutil"
-	"github.com/bitrise-tools/go-xcode/export"
-	"github.com/bitrise-tools/go-xcode/exportoptions"
-	"github.com/bitrise-tools/go-xcode/profileutil"
-	"github.com/bitrise-tools/go-xcode/utility"
-	"github.com/bitrise-tools/go-xcode/xcarchive"
-	"github.com/bitrise-tools/go-xcode/xcodebuild"
 )
 
 const (
@@ -50,10 +50,10 @@ func createConfigsModelFromEnvs() ConfigsModel {
 	return ConfigsModel{
 		ArchivePath: os.Getenv("archive_path"),
 
-		ExportMethod:   os.Getenv("export_method"),
-		UploadBitcode:  os.Getenv("upload_bitcode"),
-		CompileBitcode: os.Getenv("compile_bitcode"),
-		TeamID:         os.Getenv("team_id"),
+		ExportMethod:                    os.Getenv("export_method"),
+		UploadBitcode:                   os.Getenv("upload_bitcode"),
+		CompileBitcode:                  os.Getenv("compile_bitcode"),
+		TeamID:                          os.Getenv("team_id"),
 		CustomExportOptionsPlistContent: os.Getenv("custom_export_options_plist_content"),
 
 		UseLegacyExport:                     os.Getenv("use_legacy_export"),
@@ -294,7 +294,8 @@ func main() {
 				fail("Failed to get installed certificates, error: %s", err)
 			}
 
-			installedCertificates = certificateutil.FilterValidCertificateInfos(installedCertificates)
+			certsInfo := certificateutil.FilterValidCertificateInfos(installedCertificates)
+			installedCertificates = append(certsInfo.ValidCertificates, certsInfo.DuplicatedCertificates...)
 
 			log.Debugf("\n")
 			log.Debugf("Installed certificates:")
@@ -309,7 +310,8 @@ func main() {
 					log.Errorf("Failed to read installed Installer certificates, error: %s", err)
 				}
 
-				installedInstallerCertificates = certificateutil.FilterValidCertificateInfos(installedInstallerCertificates)
+				certsInfo = certificateutil.FilterValidCertificateInfos(installedInstallerCertificates)
+				installedInstallerCertificates := append(certsInfo.ValidCertificates, certsInfo.DuplicatedCertificates...)
 
 				log.Debugf("\n")
 				log.Debugf("Installed Installer certificates:")
@@ -377,7 +379,7 @@ func main() {
 
 			exportProfileMapping := map[string]string{}
 			if macCodeSignGroup != nil {
-				for bundleID, profileInfo := range macCodeSignGroup.BundleIDProfileMap {
+				for bundleID, profileInfo := range macCodeSignGroup.BundleIDProfileMap() {
 					exportProfileMapping[bundleID] = profileInfo.Name
 				}
 			}
@@ -388,8 +390,8 @@ func main() {
 
 				if macCodeSignGroup != nil {
 					options.BundleIDProvisioningProfileMapping = exportProfileMapping
-					options.SigningCertificate = macCodeSignGroup.Certificate.CommonName
-					options.InstallerSigningCertificate = macCodeSignGroup.InstallerCertificate.CommonName
+					options.SigningCertificate = macCodeSignGroup.Certificate().CommonName
+					options.InstallerSigningCertificate = macCodeSignGroup.InstallerCertificate().CommonName
 				}
 
 				exportOpts = options
@@ -398,7 +400,7 @@ func main() {
 
 				if macCodeSignGroup != nil {
 					options.BundleIDProvisioningProfileMapping = exportProfileMapping
-					options.SigningCertificate = macCodeSignGroup.Certificate.CommonName
+					options.SigningCertificate = macCodeSignGroup.Certificate().CommonName
 				}
 
 				exportOpts = options
