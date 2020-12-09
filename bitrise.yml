@@ -1,9 +1,8 @@
-format_version: 11
+format_version: 10
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
-  - BITRISE_MACOS_XCARCHIVE_PATH: $BITRISE_MACOS_XCARCHIVE_PATH
   - EXPORT_PLIST: $EXPORT_PLIST
   - SAMPLE_APP_URL: https://github.com/bitrise-samples/macos-sample-app.git
 
@@ -77,3 +76,12 @@ workflows:
         - content: |-
             echo "BITRISE_APP_PATH: $BITRISE_APP_PATH"
             echo "BITRISE_PKG_PATH: $BITRISE_PKG_PATH"
+
+  audit-this-step:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+            stepman audit --step-yml ./step.yml
