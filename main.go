@@ -12,10 +12,7 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-xcode/certificateutil"
-	"github.com/bitrise-io/go-xcode/export"
 	"github.com/bitrise-io/go-xcode/exportoptions"
-	"github.com/bitrise-io/go-xcode/profileutil"
 	"github.com/bitrise-io/go-xcode/utility"
 	"github.com/bitrise-io/go-xcode/xcarchive"
 	"github.com/bitrise-io/go-xcode/xcodebuild"
@@ -289,102 +286,9 @@ func main() {
 		if xcodebuildVersion.MajorVersion >= 9 {
 			log.Printf("xcode major version > 9, generating provisioningProfiles node")
 
-			var macCodeSignGroup *export.MacCodeSignGroup
-			exportProfileMapping := map[string]string{}
-
-			// We do not need provisioning profile for the export if the app in the generated XcArchive doesn't
-			// contain embedded provisioning profile.
-			if archive.Application.ProvisioningProfile != nil {
-				installedCertificates, err := certificateutil.InstalledCodesigningCertificateInfos()
-				if err != nil {
-					fail("Failed to get installed certificates, error: %s", err)
-				}
-				certificates := certificateutil.FilterValidCertificateInfos(installedCertificates)
-				validCertificates := append(certificates.ValidCertificates, certificates.DuplicatedCertificates...)
-
-				log.Debugf("\n")
-				log.Debugf("Installed valid certificates:")
-				for _, certInfo := range validCertificates {
-					log.Debugf(certInfo.String())
-				}
-
-				log.Debugf("\n")
-				log.Debugf("Installed invalid certificates:")
-				for _, certInfo := range certificates.InvalidCertificates {
-					log.Debugf(certInfo.String())
-				}
-				log.Debugf("\n")
-
-				installedProfiles, err := profileutil.InstalledProvisioningProfileInfos(profileutil.ProfileTypeMacOs)
-				if err != nil {
-					fail("Failed to get installed provisioning profiles, error: %s", err)
-				}
-
-				log.Debugf("\n")
-				log.Debugf("Installed profiles:")
-				for _, profInfo := range installedProfiles {
-					log.Debugf(profInfo.String())
-				}
-
-				var validInstallerCertificates []certificateutil.CertificateInfoModel
-				if exportMethod == exportoptions.MethodAppStore {
-					installedInstallerCertificates, err := certificateutil.InstalledInstallerCertificateInfos()
-					if err != nil {
-						log.Errorf("Failed to read installed Installer certificates, error: %s", err)
-					}
-					installerCertificates := certificateutil.FilterValidCertificateInfos(installedInstallerCertificates)
-					validInstallerCertificates = append(installerCertificates.ValidCertificates, installerCertificates.DuplicatedCertificates...)
-
-					log.Debugf("\n")
-					log.Debugf("Installed valid installer certificates:")
-					for _, certInfo := range validInstallerCertificates {
-						log.Debugf(certInfo.String())
-					}
-
-					log.Debugf("\n")
-					log.Debugf("Installed invalid installer certificates:")
-					for _, certInfo := range installerCertificates.InvalidCertificates {
-						log.Debugf(certInfo.String())
-					}
-				}
-
-				macCodeSignGroup, err = matchingMacCodeSignGroups(archive, validCertificates, validInstallerCertificates, installedProfiles, exportMethod, "")
-				if err != nil {
-					fail("Failed to find code sign groups for the project, error: %s", err)
-				}
-
-				if macCodeSignGroup != nil {
-					for bundleID, profileInfo := range macCodeSignGroup.BundleIDProfileMap() {
-						exportProfileMapping[bundleID] = profileInfo.Name
-					}
-				}
-
-			} else {
-				log.Printf("Archive was generated without provisioning profile.")
-				log.Printf("Export the application using automatic signing...")
-				fmt.Println()
-			}
-
-			var exportOpts exportoptions.ExportOptions
-			if exportMethod == exportoptions.MethodAppStore {
-				options := exportoptions.NewAppStoreOptions()
-
-				if macCodeSignGroup != nil {
-					options.BundleIDProvisioningProfileMapping = exportProfileMapping
-					options.SigningCertificate = macCodeSignGroup.Certificate().CommonName
-					options.InstallerSigningCertificate = macCodeSignGroup.InstallerCertificate().CommonName
-				}
-
-				exportOpts = options
-			} else {
-				options := exportoptions.NewNonAppStoreOptions(exportMethod)
-
-				if macCodeSignGroup != nil {
-					options.BundleIDProvisioningProfileMapping = exportProfileMapping
-					options.SigningCertificate = macCodeSignGroup.Certificate().CommonName
-				}
-
-				exportOpts = options
+			exportOpts, err := generateMacExportOptionsPlist(archive, exportMethod, configs.TeamID)
+			if err != nil {
+				fail("Export options could not be generated: %v", err)
 			}
 
 			log.Printf("generated export options content:")
