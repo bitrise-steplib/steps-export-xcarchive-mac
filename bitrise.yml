@@ -37,8 +37,10 @@ workflows:
         - clone_into_dir: ./
         - commit: ""
         - tag: ""
-        - branch: "master"
+        - branch: "STEP-180-new-team-id"
         - pull_request_id: ""
+        - pull_request_merge_branch: ""
+        - pull_request_repository_url: ""
         - clone_depth: ""
     - certificate-and-profile-installer:
         inputs:
