@@ -12,14 +12,11 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-xcode/exportoptions"
+	"github.com/bitrise-io/go-xcode/utility"
+	"github.com/bitrise-io/go-xcode/xcarchive"
+	"github.com/bitrise-io/go-xcode/xcodebuild"
 	"github.com/bitrise-steplib/steps-export-xcarchive-mac/utils"
-	"github.com/bitrise-tools/go-xcode/certificateutil"
-	"github.com/bitrise-tools/go-xcode/export"
-	"github.com/bitrise-tools/go-xcode/exportoptions"
-	"github.com/bitrise-tools/go-xcode/profileutil"
-	"github.com/bitrise-tools/go-xcode/utility"
-	"github.com/bitrise-tools/go-xcode/xcarchive"
-	"github.com/bitrise-tools/go-xcode/xcodebuild"
 )
 
 const (
@@ -50,10 +47,10 @@ func createConfigsModelFromEnvs() ConfigsModel {
 	return ConfigsModel{
 		ArchivePath: os.Getenv("archive_path"),
 
-		ExportMethod:   os.Getenv("export_method"),
-		UploadBitcode:  os.Getenv("upload_bitcode"),
-		CompileBitcode: os.Getenv("compile_bitcode"),
-		TeamID:         os.Getenv("team_id"),
+		ExportMethod:                    os.Getenv("export_method"),
+		UploadBitcode:                   os.Getenv("upload_bitcode"),
+		CompileBitcode:                  os.Getenv("compile_bitcode"),
+		TeamID:                          os.Getenv("team_id"),
 		CustomExportOptionsPlistContent: os.Getenv("custom_export_options_plist_content"),
 
 		UseLegacyExport:                     os.Getenv("use_legacy_export"),
@@ -289,119 +286,9 @@ func main() {
 		if xcodebuildVersion.MajorVersion >= 9 {
 			log.Printf("xcode major version > 9, generating provisioningProfiles node")
 
-			installedCertificates, err := certificateutil.InstalledCodesigningCertificateInfos()
+			exportOpts, err := generateMacExportOptionsPlist(archive, exportMethod, configs.TeamID)
 			if err != nil {
-				fail("Failed to get installed certificates, error: %s", err)
-			}
-
-			installedCertificates = certificateutil.FilterValidCertificateInfos(installedCertificates)
-
-			log.Debugf("\n")
-			log.Debugf("Installed certificates:")
-			for _, certInfo := range installedCertificates {
-				log.Debugf(certInfo.String())
-			}
-
-			installedInstallerCertificates := []certificateutil.CertificateInfoModel{}
-			if exportMethod == exportoptions.MethodAppStore {
-				installedInstallerCertificates, err = certificateutil.InstalledInstallerCertificateInfos()
-				if err != nil {
-					log.Errorf("Failed to read installed Installer certificates, error: %s", err)
-				}
-
-				installedInstallerCertificates = certificateutil.FilterValidCertificateInfos(installedInstallerCertificates)
-
-				log.Debugf("\n")
-				log.Debugf("Installed Installer certificates:")
-				for _, certInfo := range installedInstallerCertificates {
-					log.Debugf(certInfo.String())
-				}
-			}
-
-			installedProfiles, err := profileutil.InstalledProvisioningProfileInfos(profileutil.ProfileTypeMacOs)
-			if err != nil {
-				fail("Failed to get installed provisioning profiles, error: %s", err)
-			}
-
-			log.Debugf("\n")
-			log.Debugf("Installed profiles:")
-			for _, profileInfo := range installedProfiles {
-				log.Debugf(profileInfo.String(installedCertificates...))
-			}
-
-			bundleIDEntitlementsMap := archive.BundleIDEntitlementsMap()
-			bundleIDs := []string{}
-			for bundleID := range bundleIDEntitlementsMap {
-				bundleIDs = append(bundleIDs, bundleID)
-			}
-
-			fmt.Println()
-			log.Printf("Target Bundle ID - Entitlements map")
-			idx := -1
-			for bundleID, entitlements := range bundleIDEntitlementsMap {
-				idx++
-				entitlementKeys := []string{}
-				for key := range entitlements {
-					entitlementKeys = append(entitlementKeys, key)
-				}
-				log.Printf("%s: %s", bundleID, entitlementKeys)
-			}
-
-			fmt.Println()
-			log.Printf("Resolving CodeSignGroups...")
-			codeSignGroups := export.CreateSelectableCodeSignGroups(installedCertificates, installedProfiles, bundleIDs)
-
-			if len(codeSignGroups) == 0 {
-				log.Errorf("Failed to find code singing groups for specified export method (%s)", exportMethod)
-			}
-
-			codeSignGroups = export.FilterSelectableCodeSignGroups(codeSignGroups,
-				export.CreateEntitlementsSelectableCodeSignGroupFilter(bundleIDEntitlementsMap),
-				export.CreateExportMethodSelectableCodeSignGroupFilter(exportMethod),
-			)
-
-			for _, group := range codeSignGroups {
-				log.Debugf(group.String())
-			}
-
-			var macCodeSignGroup *export.MacCodeSignGroup
-			macCodeSignGroups := export.CreateMacCodeSignGroup(codeSignGroups, installedInstallerCertificates, exportMethod)
-			if len(macCodeSignGroups) == 0 {
-				log.Errorf("Can not create macos codesiging groups for the project")
-			} else if len(macCodeSignGroups) > 1 {
-				log.Warnf("Multiple matching  codesiging groups found for the project, using first...")
-				macCodeSignGroup = &(macCodeSignGroups[0])
-			} else {
-				macCodeSignGroup = &(macCodeSignGroups[0])
-			}
-
-			exportProfileMapping := map[string]string{}
-			if macCodeSignGroup != nil {
-				for bundleID, profileInfo := range macCodeSignGroup.BundleIDProfileMap {
-					exportProfileMapping[bundleID] = profileInfo.Name
-				}
-			}
-
-			var exportOpts exportoptions.ExportOptions
-			if exportMethod == exportoptions.MethodAppStore {
-				options := exportoptions.NewAppStoreOptions()
-
-				if macCodeSignGroup != nil {
-					options.BundleIDProvisioningProfileMapping = exportProfileMapping
-					options.SigningCertificate = macCodeSignGroup.Certificate.CommonName
-					options.InstallerSigningCertificate = macCodeSignGroup.InstallerCertificate.CommonName
-				}
-
-				exportOpts = options
-			} else {
-				options := exportoptions.NewNonAppStoreOptions(exportMethod)
-
-				if macCodeSignGroup != nil {
-					options.BundleIDProvisioningProfileMapping = exportProfileMapping
-					options.SigningCertificate = macCodeSignGroup.Certificate.CommonName
-				}
-
-				exportOpts = options
+				fail("Export options could not be generated: %v", err)
 			}
 
 			log.Printf("generated export options content:")
