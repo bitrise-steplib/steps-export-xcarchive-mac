@@ -120,7 +120,7 @@ func matchingMacCodeSignGroups(archive xcarchive.MacosArchive, installedCertific
 		return nil, fmt.Errorf("precondition false, provisioning profile expected in the archive")
 	}
 
-	log.Printf("Bundle ID to Entitlements mapping")
+	log.Debugf("Bundle ID to Entitlements mapping")
 	bundleIDEntitlementsMap := archive.BundleIDEntitlementsMap()
 	bundleIDs := []string{}
 	for bundleID, entitlements := range bundleIDEntitlementsMap {

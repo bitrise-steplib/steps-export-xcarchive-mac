@@ -4,37 +4,34 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 app:
   envs:
   - SAMPLE_APP_URL: https://github.com/bitrise-samples/macos-sample-app.git
-  - EXPORT_PLIST: |-
-      <?xml version="1.0" encoding="UTF-8"?>
-      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-      <plist version="1.0">
-      <dict>
-        <key>installerSigningCertificate</key>
-        <string>3rd Party Mac Developer Installer</string>
-        <key>method</key>
-        <string>app-store</string>
-        <key>signingCertificate</key>
-        <string>3rd Party Mac Developer Application</string>
-        <key>signingStyle</key>
-        <string>manual</string>
-        <key>teamID</key>
-        <string>DT2C2FZ7U2</string>
-        <key>uploadSymbols</key>
-        <false/>
-      </dict>
-      </plist>
 
 workflows:
   ci:
     before_run:
     - audit-this-step
     after_run: 
-    - test
+    - test_no_profile
+    - test_profile
     steps:
     - go-list:
     - golint:
     - errcheck:
     - go-test:
+
+  test_no_profile:
+    envs:
+    - BRANCH: master
+    after_run:
+    - _common
+
+  test_profile:
+    envs:
+    - BRANCH: provisioning_profile
+    after_run:
+    - _common
+
+  _common:
+    steps:
     - script:
         inputs:
         - content: |-
@@ -55,13 +52,14 @@ workflows:
         - clone_into_dir: ./
         - commit: ""
         - tag: ""
-        - branch: "master"
+        - branch: $BRANCH
         - pull_request_id: ""
         - pull_request_merge_branch: ""
         - pull_request_repository_url: ""
         - clone_depth: ""
     - certificate-and-profile-installer:
         inputs:
+        - install_defaults: "no"
         - default_certificate_url: ""
         - default_certificate_passphrase: ""
         - default_provisioning_profile_url: ""
@@ -72,9 +70,6 @@ workflows:
         - export_method: app-store
         - output_tool: xcodebuild
         - custom_export_options_plist_content: $EXPORT_PLIST
-
-  test:
-    steps:
     - path::./:
         title: "Step Test - App Store"
         inputs:
