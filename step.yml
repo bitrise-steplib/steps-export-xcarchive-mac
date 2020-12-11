@@ -99,7 +99,7 @@ inputs:
     opts:
       title: Use legacy export method?
       description: |-
-        If this input is set to `yes`, step will use legacy export method.
+        If this input is set to `yes`, the step will use legacy export method.
       value_options:
       - "yes"
       - "no"
@@ -108,7 +108,7 @@ inputs:
     opts:
       title: Specify Provisioning Profile name to use by export
       description: |-
-        If this input is empty xcodebuild will grab one of the matching installed provisining profile.
+        If this input is empty, xcodebuild will grab one of the matching installed provisining profile.
   - legacy_export_output_format: "app"
     opts:
       title: Specify export format
