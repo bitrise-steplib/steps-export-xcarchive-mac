@@ -118,7 +118,7 @@ inputs:
       - "app"
       - "pkg" 
       is_required: true  
-  - verbose_log: "yes"
+  - verbose_log: "no"
     opts:
       title: "Enable verbose logging?"
       description: Enable verbose logging?
