@@ -3,12 +3,13 @@ module github.com/bitrise-io/go-utils
 go 1.13
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/kisielk/errcheck v1.2.0 // indirect
-	github.com/stretchr/testify v1.5.1
-	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
-	golang.org/x/lint v0.0.0-20200130185559-910be7a94367 // indirect
-	golang.org/x/sys v0.0.0-20200219091948-cb0a6d8edb6c // indirect
-	golang.org/x/tools v0.0.0-20200220224806-8a925fa4c0df // indirect
-	gopkg.in/yaml.v2 v2.2.8
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.0
+	github.com/stretchr/objx v0.3.0 // indirect
+	github.com/stretchr/testify v1.7.0
+	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
+	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d // indirect
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
+	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

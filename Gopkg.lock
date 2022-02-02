@@ -2,8 +2,8 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:2f4bc4336abe0ac18637b62214659ee0e011741734606a6c23b4e03b76fa57b1"
+  branch = "v1"
+  digest = "1:b0d7420fb3a18154c17dd97b190011165bf96f2f511169bffa43aee057006d51"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -15,7 +15,7 @@
     "ziputil",
   ]
   pruneopts = ""
-  revision = "6cc2aa4d248adef509996ac484bffd38856ddf80"
+  revision = "ee1ed1f56770dbae5589ddc9098a620326251812"
 
 [[projects]]
   digest = "1:81099da3af82eba33156d1632a765d043c5a56118992ada70f332a68e384f5b8"

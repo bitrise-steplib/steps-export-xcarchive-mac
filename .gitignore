@@ -1,3 +1,4 @@
 .bitrise*
 _tmp/
 steps-export-xcarchive-mac
+.DS_Store
