@@ -20,11 +20,15 @@ func sampleRepoPath(t *testing.T) string {
 		dir = tmpDir
 	} else {
 		var err error
-		dir, err = pathutil.NormalizedOSTempDirPath("__artifacts__")
+		dir, err = pathutil.NormalizedOSTempDirPath(tempDirName)
 		require.NoError(t, err)
-		sampleArtifactsGitURI := "https://github.com/bitrise-samples/sample-artifacts.git"
+		sampleArtifactsGitURI := "https://github.com/bitrise-io/sample-artifacts.git"
 		cmd := command.New("git", "clone", sampleArtifactsGitURI, dir)
-		require.NoError(t, cmd.Run())
+		output, err := cmd.RunAndReturnTrimmedCombinedOutput()
+		if err != nil {
+			t.Log(output)
+			t.Errorf("git clone failed: %s", err)
+		}
 		tmpDir = dir
 	}
 	t.Logf("sample artifcats dir: %s\n", dir)
@@ -39,25 +43,25 @@ func TestNewIosArchive(t *testing.T) {
 
 	app := archive.Application
 	require.Equal(t, 26, len(app.InfoPlist))
-	require.Equal(t, 2, len(app.Entitlements))
+	require.Equal(t, 4, len(app.Entitlements))
 	require.Equal(t, "*", app.ProvisioningProfile.BundleID)
 
 	require.Equal(t, 1, len(app.Extensions))
 	extension := app.Extensions[0]
 	require.Equal(t, 23, len(extension.InfoPlist))
-	require.Equal(t, 2, len(extension.Entitlements))
+	require.Equal(t, 4, len(extension.Entitlements))
 	require.Equal(t, "*", extension.ProvisioningProfile.BundleID)
 
 	require.NotNil(t, app.WatchApplication)
 	watchApp := *app.WatchApplication
 	require.Equal(t, 24, len(watchApp.InfoPlist))
-	require.Equal(t, 2, len(watchApp.Entitlements))
+	require.Equal(t, 4, len(watchApp.Entitlements))
 	require.Equal(t, "*", watchApp.ProvisioningProfile.BundleID)
 
 	require.Equal(t, 1, len(watchApp.Extensions))
 	watchExtension := watchApp.Extensions[0]
 	require.Equal(t, 23, len(watchExtension.InfoPlist))
-	require.Equal(t, 2, len(watchExtension.Entitlements))
+	require.Equal(t, 4, len(watchExtension.Entitlements))
 	require.Equal(t, "*", watchExtension.ProvisioningProfile.BundleID)
 }
 
@@ -69,19 +73,19 @@ func TestNewAppClipArchive(t *testing.T) {
 
 	app := archive.Application
 	require.Equal(t, 30, len(app.InfoPlist))
-	require.Equal(t, 0, len(app.Entitlements))
+	require.Equal(t, 6, len(app.Entitlements))
 	require.Equal(t, "io.bitrise.appcliptest", app.ProvisioningProfile.BundleID)
 
 	require.Equal(t, 1, len(app.Extensions))
 	extension := app.Extensions[0]
 	require.Equal(t, 24, len(extension.InfoPlist))
-	require.Equal(t, 0, len(extension.Entitlements))
+	require.Equal(t, 4, len(extension.Entitlements))
 	require.Equal(t, "io.bitrise.appcliptest.ios-widgets", extension.ProvisioningProfile.BundleID)
 
 	require.NotNil(t, app.ClipApplication)
 	clipApp := *app.ClipApplication
 	require.Equal(t, 31, len(clipApp.InfoPlist))
-	require.Equal(t, 0, len(clipApp.Entitlements))
+	require.Equal(t, 8, len(clipApp.Entitlements))
 	require.Equal(t, "io.bitrise.appcliptest.Clip", clipApp.ProvisioningProfile.BundleID)
 }
 
@@ -132,14 +136,14 @@ func TestBundleIDProfileInfoMap(t *testing.T) {
 }
 
 func TestFindDSYMs(t *testing.T) {
-	// base case: dsyms for app and frameworks
-	iosArchivePth := filepath.Join(sampleRepoPath(t), "archives/ios.xcarchive")
+	// base case: dsyms for apps and frameworks
+	iosArchivePth := filepath.Join(sampleRepoPath(t), "archives/Fruta.xcarchive")
 	archive, err := NewIosArchive(iosArchivePth)
 	require.NoError(t, err)
 
 	appDsym, otherDsyms, err := archive.FindDSYMs()
 	require.NoError(t, err)
-	require.NotEmpty(t, appDsym)
+	require.Equal(t, 2, len(appDsym))
 	require.Equal(t, 2, len(otherDsyms))
 
 	// no app dsym case: something has changed since the
@@ -155,7 +159,6 @@ func TestFindDSYMs(t *testing.T) {
 	appDsym, _, err = archive.FindDSYMs()
 	require.NoError(t, err)
 	require.Empty(t, appDsym)
-
 }
 
 func Test_applicationFromArchive(t *testing.T) {
