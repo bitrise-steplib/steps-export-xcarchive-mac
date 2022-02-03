@@ -20,13 +20,13 @@ workflows:
 
   test_no_profile:
     envs:
-    - BRANCH: master
+    - BRANCH: "master"
     after_run:
     - _common
 
   test_profile:
     envs:
-    - BRANCH: provisioning_profile
+    - BRANCH: "provisioning_profile"
     after_run:
     - _common
 
