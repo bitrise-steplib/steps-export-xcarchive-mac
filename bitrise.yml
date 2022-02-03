@@ -53,6 +53,7 @@ workflows:
         - commit: ""
         - tag: ""
         - branch: $BRANCH
+        - branch_dest: "$BITRISE_GIT_BRANCH"
         - pull_request_id: ""
         - pull_request_merge_branch: ""
         - pull_request_repository_url: ""
