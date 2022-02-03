@@ -11,7 +11,7 @@ import (
 )
 
 func TestScheme(t *testing.T) {
-	dir := testhelper.GitCloneIntoTmpDir(t, "https://github.com/bitrise-samples/xcode-project-test.git")
+	dir := testhelper.GitCloneIntoTmpDir(t, "https://github.com/bitrise-io/xcode-project-test.git")
 	workspace, err := Open(filepath.Join(dir, "XcodeProj.xcworkspace"))
 	require.NoError(t, err)
 
@@ -49,7 +49,7 @@ func TestScheme(t *testing.T) {
 }
 
 func TestSchemes(t *testing.T) {
-	dir := testhelper.GitCloneIntoTmpDir(t, "https://github.com/bitrise-samples/xcode-project-test.git")
+	dir := testhelper.GitCloneIntoTmpDir(t, "https://github.com/bitrise-io/xcode-project-test.git")
 	workspace, err := Open(filepath.Join(dir, "XcodeProj.xcworkspace"))
 	require.NoError(t, err)
 

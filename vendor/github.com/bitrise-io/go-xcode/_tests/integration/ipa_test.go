@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	sampleArtifactsGitURI = "https://github.com/bitrise-samples/sample-artifacts.git"
+	sampleArtifactsGitURI = "https://github.com/bitrise-io/sample-artifacts.git"
 )
 
 func testIpasDirPth(t *testing.T) string {

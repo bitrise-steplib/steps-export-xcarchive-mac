@@ -25,7 +25,7 @@ func TestResolveCodeSignInfo(t *testing.T) {
 	user := os.Getenv("USER")
 
 	{
-		projectPth := cloneSampleProject(t, "https://github.com/bitrise-samples/sample-apps-ios-multi-target.git", "code-sign-test.xcodeproj")
+		projectPth := cloneSampleProject(t, "https://github.com/bitrise-io/sample-apps-ios-multi-target.git", "code-sign-test.xcodeproj")
 
 		targetCodeSignInfoMap, err := ResolveCodeSignInfo(projectPth, "code-sign-test", user)
 		require.NoError(t, err)
@@ -77,7 +77,7 @@ func TestResolveCodeSignInfo(t *testing.T) {
 	}
 
 	{
-		projectPth := cloneSampleProject(t, "https://github.com/bitrise-samples/sample-apps-ios-simple-objc.git", "ios-simple-objc/ios-simple-objc.xcodeproj")
+		projectPth := cloneSampleProject(t, "https://github.com/bitrise-io/sample-apps-ios-simple-objc.git", "ios-simple-objc/ios-simple-objc.xcodeproj")
 
 		targetCodeSignInfoMap, err := ResolveCodeSignInfo(projectPth, "ios-simple-objc", user)
 		require.NoError(t, err)

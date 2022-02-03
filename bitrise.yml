@@ -3,7 +3,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
-  - SAMPLE_APP_URL: https://github.com/bitrise-samples/macos-sample-app.git
+  - SAMPLE_APP_URL: https://github.com/bitrise-io/macos-sample-app.git
 
 workflows:
   ci:
