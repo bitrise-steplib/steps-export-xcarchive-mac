@@ -58,12 +58,12 @@ workflows:
         - pull_request_merge_branch: ""
         - pull_request_repository_url: ""
         - clone_depth: ""
-    - certificate-and-profile-installer:
-        inputs:
-        - install_defaults: "no"
-        - default_certificate_url: ""
-        - default_certificate_passphrase: ""
-        - default_provisioning_profile_url: ""
+    # - certificate-and-profile-installer:
+    #     inputs:
+    #     - install_defaults: "no"
+    #     - default_certificate_url: ""
+    #     - default_certificate_passphrase: ""
+    #     - default_provisioning_profile_url: ""
     - xcode-archive-mac:
         inputs:
         - project_path: ./macos-sample-app.xcodeproj
