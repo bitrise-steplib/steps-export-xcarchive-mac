@@ -2,8 +2,8 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:2f4bc4336abe0ac18637b62214659ee0e011741734606a6c23b4e03b76fa57b1"
+  branch = "v1"
+  digest = "1:b0d7420fb3a18154c17dd97b190011165bf96f2f511169bffa43aee057006d51"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
@@ -12,43 +12,48 @@
     "fileutil",
     "log",
     "pathutil",
-    "pkcs12",
-    "pkcs12/internal/rc2",
     "ziputil",
   ]
   pruneopts = ""
-  revision = "6cc2aa4d248adef509996ac484bffd38856ddf80"
+  revision = "ee1ed1f56770dbae5589ddc9098a620326251812"
 
 [[projects]]
-  branch = "master"
-  digest = "1:b28ada98f8fb0e3a8cc11f1ff256d55c7121ff52740860d497c388bf5b56ba2e"
+  digest = "1:81099da3af82eba33156d1632a765d043c5a56118992ada70f332a68e384f5b8"
   name = "github.com/bitrise-io/go-xcode"
   packages = [
     "certificateutil",
+    "export",
     "exportoptions",
     "models",
     "plistutil",
     "profileutil",
     "utility",
+    "xcarchive",
+    "xcodebuild",
+    "xcodeproject/serialized",
   ]
   pruneopts = ""
-  revision = "7d05f87f6e9c9004759304ae8c3f3c90ea9c3bd4"
+  revision = "f8ce7d223bf7c53612e9fa0f4322f7465b6d7576"
+  version = "v1.0.2"
 
 [[projects]]
   branch = "master"
-  digest = "1:b28ada98f8fb0e3a8cc11f1ff256d55c7121ff52740860d497c388bf5b56ba2e"
-  name = "github.com/bitrise-tools/go-xcode"
+  digest = "1:c131ba035c57fb0624e2da8254b778289de1ed94abb35898ec58f3d20fbf47ed"
+  name = "github.com/bitrise-io/pkcs12"
   packages = [
-    "certificateutil",
-    "export",
-    "exportoptions",
-    "profileutil",
-    "utility",
-    "xcarchive",
-    "xcodebuild",
+    ".",
+    "internal/rc2",
   ]
   pruneopts = ""
-  revision = "7d05f87f6e9c9004759304ae8c3f3c90ea9c3bd4"
+  revision = "e52728e011c8301e40a94463e98aee7eea2200f8"
+
+[[projects]]
+  digest = "1:34b1bcf3d5d443238ea4946a928274de2d3ad4c7ae214e51a90a0b9f49f260d6"
+  name = "github.com/bitrise-steplib/steps-export-xcarchive-mac"
+  packages = ["utils"]
+  pruneopts = ""
+  revision = "b29039751eba2cc6d609c496ec887e8d1c2dc26a"
+  version = "1.1.0"
 
 [[projects]]
   branch = "master"
@@ -90,13 +95,14 @@
     "github.com/bitrise-io/go-utils/fileutil",
     "github.com/bitrise-io/go-utils/log",
     "github.com/bitrise-io/go-utils/pathutil",
-    "github.com/bitrise-tools/go-xcode/certificateutil",
-    "github.com/bitrise-tools/go-xcode/export",
-    "github.com/bitrise-tools/go-xcode/exportoptions",
-    "github.com/bitrise-tools/go-xcode/profileutil",
-    "github.com/bitrise-tools/go-xcode/utility",
-    "github.com/bitrise-tools/go-xcode/xcarchive",
-    "github.com/bitrise-tools/go-xcode/xcodebuild",
+    "github.com/bitrise-io/go-xcode/certificateutil",
+    "github.com/bitrise-io/go-xcode/export",
+    "github.com/bitrise-io/go-xcode/exportoptions",
+    "github.com/bitrise-io/go-xcode/profileutil",
+    "github.com/bitrise-io/go-xcode/utility",
+    "github.com/bitrise-io/go-xcode/xcarchive",
+    "github.com/bitrise-io/go-xcode/xcodebuild",
+    "github.com/bitrise-steplib/steps-export-xcarchive-mac/utils",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

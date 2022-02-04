@@ -1,7 +1,7 @@
-[[constraint]]
+[[override]]
   name = "github.com/bitrise-io/go-utils"
-  branch = "master"
+  branch = "v1"
 
-[[constraint]]
+[[override]]
   name = "github.com/bitrise-tools/go-xcode"
-  branch = "master"
+  branch = "v1.0.2"

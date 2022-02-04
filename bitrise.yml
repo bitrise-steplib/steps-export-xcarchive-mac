@@ -3,7 +3,7 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 app:
   envs:
-  - SAMPLE_APP_URL: https://github.com/bitrise-samples/macos-sample-app.git
+  - SAMPLE_APP_URL: https://github.com/bitrise-io/macos-sample-app.git
 
 workflows:
   ci:
@@ -20,13 +20,13 @@ workflows:
 
   test_no_profile:
     envs:
-    - BRANCH: master
+    - BRANCH: "master"
     after_run:
     - _common
 
   test_profile:
     envs:
-    - BRANCH: provisioning_profile
+    - BRANCH: "provisioning_profile"
     after_run:
     - _common
 
@@ -53,6 +53,7 @@ workflows:
         - commit: ""
         - tag: ""
         - branch: $BRANCH
+        - branch_dest: ""
         - pull_request_id: ""
         - pull_request_merge_branch: ""
         - pull_request_repository_url: ""
@@ -67,8 +68,9 @@ workflows:
         inputs:
         - project_path: ./macos-sample-app.xcodeproj
         - scheme: macos-sample-app
+        - force_team_id: X3C365MN6R
         - export_method: app-store
-        - output_tool: xcodebuild
+        - output_tool: xcpretty
         - custom_export_options_plist_content: $EXPORT_PLIST
     - path::./:
         title: "Step Test - App Store"
