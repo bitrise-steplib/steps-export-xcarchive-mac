@@ -4,6 +4,12 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 app:
   envs:
   - SAMPLE_APP_URL: https://github.com/bitrise-io/macos-sample-app.git
+  # Shared test secrets
+  - BITRISE_KEYCHAIN_PATH: $BITRISE_KEYCHAIN_PATH
+  - BITRISE_KEYCHAIN_PASSWORD: $BITRISE_KEYCHAIN_PASSWORD
+  - BITRISE_APPLE_APPLE_CERTIFICATE_URL_LIST: $BITRISE_APPLE_APPLE_CERTIFICATE_URL_LIST
+  - BITRISE_APPLE_APPLE_CERTIFICATE_PASSPHRASE_LIST: $BITRISE_APPLE_APPLE_CERTIFICATE_PASSPHRASE_LIST
+  - BITRISE_APPLE_PROVISIONING_PROFILE_URL_LIST: $BITRISE_APPLE_PROVISIONING_PROFILE_URL_LIST
 
 workflows:
 
@@ -41,10 +47,12 @@ workflows:
         - clone_into_dir: ./
     - certificate-and-profile-installer:
         inputs:
+        - certificate_url: $BITRISE_APPLE_APPLE_CERTIFICATE_URL_LIST
+        - certificate_passphrase: $BITRISE_APPLE_APPLE_CERTIFICATE_PASSPHRASE_LIST
+        - provisioning_profile_url: $BITRISE_APPLE_PROVISIONING_PROFILE_URL_LIST
         - install_defaults: "no"
-        - default_certificate_url: ""
-        - default_certificate_passphrase: ""
-        - default_provisioning_profile_url: ""
+        - keychain_path: $BITRISE_KEYCHAIN_PATH
+        - keychain_password: $BITRISE_KEYCHAIN_PASSWORD
     - xcode-archive-mac:
         inputs:
         - project_path: ./macos-sample-app.xcodeproj
