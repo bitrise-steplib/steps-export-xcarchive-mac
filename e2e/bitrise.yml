@@ -13,11 +13,11 @@ app:
 
 workflows:
 
-  test_no_profile:
-    envs:
-    - BRANCH: master
-    after_run:
-    - _common
+#  test_no_profile:
+#    envs:
+#    - BRANCH: master
+#    after_run:
+#    - _common
 
   test_profile:
     envs:
