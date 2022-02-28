@@ -1,0 +1,76 @@
+format_version: "11"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+app:
+  envs:
+  - SAMPLE_APP_URL: https://github.com/bitrise-io/macos-sample-app.git
+
+workflows:
+
+  test_no_profile:
+    envs:
+    - BRANCH: master
+    after_run:
+    - _common
+
+  test_profile:
+    envs:
+    - BRANCH: provisioning_profile
+    after_run:
+    - _common
+
+  _common:
+    steps:
+    - script:
+        title: Remove _tmp dir
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+            rm -rf ./_tmp
+    - change-workdir:
+        title: Switch working dir to test / _tmp dir
+        inputs:
+        - path: ./_tmp
+        - is_create_path: true
+    - git::https://github.com/bitrise-steplib/bitrise-step-simple-git-clone.git:
+        inputs:
+        - repository_url: $SAMPLE_APP_URL
+        - branch: $BRANCH
+        - clone_into_dir: ./
+    - certificate-and-profile-installer:
+        inputs:
+        - install_defaults: "no"
+        - default_certificate_url: ""
+        - default_certificate_passphrase: ""
+        - default_provisioning_profile_url: ""
+    - xcode-archive-mac:
+        inputs:
+        - project_path: ./macos-sample-app.xcodeproj
+        - scheme: macos-sample-app
+        - force_team_id: X3C365MN6R
+        - export_method: app-store
+        - output_tool: xcpretty
+        - custom_export_options_plist_content: $EXPORT_PLIST
+    - path::./:
+        title: Step Test - App Store
+        inputs:
+        - export_method: app-store
+        - verbose_log: "yes"
+    - path::./:
+        title: Step Test - Developer ID
+        inputs:
+        - export_method: developer-id
+        - verbose_log: "yes"
+    - path::./:
+        title: Step Test - None
+        inputs:
+        - export_method: none
+        - verbose_log: "yes"
+    - script:
+        title: Output Test
+        inputs:
+        - content: |-
+            echo "BITRISE_APP_PATH: $BITRISE_APP_PATH"
+            echo "BITRISE_PKG_PATH: $BITRISE_PKG_PATH"
