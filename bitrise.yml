@@ -21,6 +21,5 @@ workflows:
     - git::https://github.com/bitrise-steplib/steps-readme-generator.git@main:
         title: Generate README
         inputs:
-        # optional
-#        - contrib_section: docs/contribution.md
+        - contrib_section: docs/contribution.md
 #        - example_section: docs/examples.md

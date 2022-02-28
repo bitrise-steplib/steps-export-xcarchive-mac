@@ -118,10 +118,13 @@ inputs:
 outputs:
 - BITRISE_APP_PATH:
   opts:
-    title: The created macOS .app file's path
+    title: macOS .app path
+    description: The created macOS `.app` file's path
 - BITRISE_PKG_PATH:
   opts:
-    title: The created macOS .pkg file's path
+    title: macOS .pkg path
+    description: The created macOS `.pkg` file's path
 - BITRISE_IDEDISTRIBUTION_LOGS_PATH:
   opts:
-    title: Path to the xcdistributionlogs zip
+    title: "`xcdistributionlogs` ZIP path"
+    description: Path to the `xcdistributionlogs` ZIP file
