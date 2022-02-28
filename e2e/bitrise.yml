@@ -57,10 +57,8 @@ workflows:
         inputs:
         - project_path: ./macos-sample-app.xcodeproj
         - scheme: macos-sample-app
-        - force_team_id: X3C365MN6R
         - export_method: app-store
         - output_tool: xcpretty
-        - custom_export_options_plist_content: $EXPORT_PLIST
     - path::./:
         title: Step Test - App Store
         inputs:
