@@ -2,3 +2,4 @@
 _tmp/
 steps-export-xcarchive-mac
 .DS_Store
+.idea
