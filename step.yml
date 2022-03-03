@@ -1,9 +1,7 @@
 title: Export macOS Xcode archive
 summary: Export macOS Xcode archive
 description: |-
-  Export macOS Xcode archive.
-
-  Exports .app or .pkg from macOS .xcarchive.
+  This step exports an app (`.app` or `.pkg` from an existing macOS `xcarchive`. This is useful when one archive needs to be exported with different distribution methods without rebuilding the archive.
 website: https://github.com/bitrise-steplib/steps-export-xcarchive-mac
 source_code_url: https://github.com/bitrise-steplib/steps-export-xcarchive-mac
 support_url: https://github.com/bitrise-steplib/steps-export-xcarchive-mac/issues

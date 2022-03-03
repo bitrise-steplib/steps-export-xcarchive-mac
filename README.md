@@ -7,9 +7,7 @@ Export macOS Xcode archive
 <details>
 <summary>Description</summary>
 
-Export macOS Xcode archive.
-
-Exports .app or .pkg from macOS .xcarchive.
+This step exports an app (`.app` or `.pkg` from an existing macOS `xcarchive`. This is useful when one archive needs to be exported with different distribution methods without rebuilding the archive.
 </details>
 
 ## 🧩 Get started
