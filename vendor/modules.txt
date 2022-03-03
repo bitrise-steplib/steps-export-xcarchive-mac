@@ -7,7 +7,7 @@ github.com/bitrise-io/go-utils/fileutil
 github.com/bitrise-io/go-utils/log
 github.com/bitrise-io/go-utils/pathutil
 github.com/bitrise-io/go-utils/ziputil
-# github.com/bitrise-io/go-xcode v1.0.2
+# github.com/bitrise-io/go-xcode v1.0.4
 ## explicit; go 1.15
 github.com/bitrise-io/go-xcode/certificateutil
 github.com/bitrise-io/go-xcode/export

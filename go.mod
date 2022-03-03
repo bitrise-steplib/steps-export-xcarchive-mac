@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/bitrise-io/go-utils v1.0.1
-	github.com/bitrise-io/go-xcode v1.0.2
+	github.com/bitrise-io/go-xcode v1.0.4
 )
 
 require (
