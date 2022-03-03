@@ -121,7 +121,7 @@ func fail(format string, v ...interface{}) {
 }
 
 func findIDEDistrubutionLogsPath(output string) (string, error) {
-	pattern := `IDEDistribution: -\[IDEDistributionLogging _createLoggingBundleAtPath:\]: Created bundle at path '(?P<log_path>.*)'`
+	pattern := `IDEDistribution: -\[IDEDistributionLogging _createLoggingBundleAtPath:\]: Created bundle at path "(?P<log_path>.*)"`
 	re := regexp.MustCompile(pattern)
 
 	scanner := bufio.NewScanner(strings.NewReader(output))
