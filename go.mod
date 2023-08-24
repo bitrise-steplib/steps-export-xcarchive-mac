@@ -1,10 +1,10 @@
 module github.com/bitrise-steplib/steps-export-xcarchive-mac
 
-go 1.17
+go 1.20
 
 require (
 	github.com/bitrise-io/go-utils v1.0.9
-	github.com/bitrise-io/go-xcode v1.0.15
+	github.com/bitrise-io/go-xcode v1.0.16
 )
 
 require (
