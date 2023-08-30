@@ -1,4 +1,8 @@
-# github.com/bitrise-io/go-utils v1.0.1
+# github.com/bitrise-io/go-pkcs12 v0.0.0-20230815095624-feb898696e02
+## explicit; go 1.19
+github.com/bitrise-io/go-pkcs12
+github.com/bitrise-io/go-pkcs12/internal/rc2
+# github.com/bitrise-io/go-utils v1.0.9
 ## explicit; go 1.13
 github.com/bitrise-io/go-utils/colorstring
 github.com/bitrise-io/go-utils/command
@@ -7,8 +11,8 @@ github.com/bitrise-io/go-utils/fileutil
 github.com/bitrise-io/go-utils/log
 github.com/bitrise-io/go-utils/pathutil
 github.com/bitrise-io/go-utils/ziputil
-# github.com/bitrise-io/go-xcode v1.0.4
-## explicit; go 1.15
+# github.com/bitrise-io/go-xcode v1.0.16
+## explicit; go 1.20
 github.com/bitrise-io/go-xcode/certificateutil
 github.com/bitrise-io/go-xcode/export
 github.com/bitrise-io/go-xcode/exportoptions
@@ -19,10 +23,6 @@ github.com/bitrise-io/go-xcode/utility
 github.com/bitrise-io/go-xcode/xcarchive
 github.com/bitrise-io/go-xcode/xcodebuild
 github.com/bitrise-io/go-xcode/xcodeproject/serialized
-# github.com/bitrise-io/pkcs12 v0.0.0-20211108084543-e52728e011c8
-## explicit
-github.com/bitrise-io/pkcs12
-github.com/bitrise-io/pkcs12/internal/rc2
 # github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa
 ## explicit
 github.com/fullsailor/pkcs7
@@ -32,6 +32,9 @@ github.com/pkg/errors
 # github.com/ryanuber/go-glob v1.0.0
 ## explicit
 github.com/ryanuber/go-glob
+# golang.org/x/crypto v0.12.0
+## explicit; go 1.17
+golang.org/x/crypto/pbkdf2
 # howett.net/plist v1.0.0
 ## explicit; go 1.12
 howett.net/plist
